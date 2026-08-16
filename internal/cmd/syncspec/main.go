@@ -57,9 +57,11 @@ func main() {
 		fail("%s did not answer JSON: %v", source, err)
 	}
 
-	written.WriteString("\n")
+	// Indent copies whatever the answer ended with, so the file gets its one newline from here
+	// rather than from the deployment's whitespace.
+	body := append(bytes.TrimRight(written.Bytes(), " \t\r\n"), '\n')
 
-	if err := os.WriteFile(target, written.Bytes(), 0o644); err != nil {
+	if err := os.WriteFile(target, body, 0o644); err != nil {
 		fail("%s cannot be written: %v", target, err)
 	}
 
