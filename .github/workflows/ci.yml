@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  # Every branch, so work is checked before a pull request exists. Not tags: a release tag is the
+  # release workflow's, and it runs these same checks itself.
+  push:
+    branches: ['**']
+  pull_request:
+
+# Nothing here reads or writes the repository beyond checking it out.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # A pull request from this repository duplicates the push that its own branch already made;
+    # one from a fork has no such push, and is the only case the pull_request event has to cover.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor go.mod declares, and the two releases after it.
+        go: ['1.24', '1.25', '1.26']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Check the formatting
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; echo '::error::Run gofmt -w .'; exit 1; }
+
+      - run: go vet ./...
+
+      - run: go build ./...
+
+      - run: go test -race ./...
+
+      # Every operation in the specification must be reachable; a name collision merges two silently.
+      - run: go run ./internal/cmd/checkops
+
+  generated:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      # The committed client must be what the committed specification produces.
+      - run: go run ./internal/cmd/generate
+
+      - run: git diff --exit-code -- models.gen.go api.gen.go || (echo '::error::The generated client is stale. Run `make generate`.' && exit 1)

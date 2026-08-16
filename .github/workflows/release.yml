@@ -1,0 +1,51 @@
+name: Release
+
+# A Go module is published by its tag: the proxy serves whatever the repository has, so there is
+# nothing to upload and no credential anywhere. This runs the checks the tag is claiming to pass,
+# and asks the proxy for the version so it is warm — and so a tag that cannot be resolved fails
+# here rather than in somebody's build.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - run: test -z "$(gofmt -l .)" || { gofmt -l .; echo '::error::Run gofmt -w .'; exit 1; }
+
+      - run: go vet ./...
+
+      - run: go test -race ./...
+
+      - run: go run ./internal/cmd/checkops
+
+      # The tag and the constant must agree, or the User-Agent names a version nobody can install.
+      - name: Check the tag matches the Version constant
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          declared="$(grep -oE 'Version = "[^"]+"' client.go | cut -d'"' -f2)"
+          test "$tagged" = "$declared" || { echo "::error::Tag $tagged does not match Version $declared in client.go."; exit 1; }
+
+      - name: Ask the module proxy for this version
+        run: |
+          module="$(go list -m)"
+          for attempt in 1 2 3 4 5; do
+            if GOPROXY=https://proxy.golang.org go list -m "$module@$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+
+            sleep 20
+          done
+
+          echo "::error::The proxy does not serve $module@$GITHUB_REF_NAME yet."
+          exit 1
