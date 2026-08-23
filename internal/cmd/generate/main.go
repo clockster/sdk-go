@@ -363,6 +363,13 @@ func lowerFirst(text string) string {
 	return strings.ToLower(text[:1]) + text[1:]
 }
 
+// warn says something about the document without stopping. A document that disagrees with itself
+// is worth hearing about on every run, and leaving the field as its bare type is better than
+// guessing which half of the disagreement was meant.
+func warn(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+}
+
 func fail(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)

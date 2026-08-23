@@ -157,9 +157,9 @@ func (m *models) oneType(sch *schema, declared, hint string, s side) gotype {
 	case "string":
 		return m.stringType(sch)
 	case "integer":
-		return gotype{name: "int64", kind: kindScalar}
+		return gotype{name: "int64", kind: kindScalar, note: enumNote(sch, "integer")}
 	case "number":
-		return gotype{name: "float64", kind: kindScalar}
+		return gotype{name: "float64", kind: kindScalar, note: enumNote(sch, "number")}
 	case "boolean":
 		return gotype{name: "bool", kind: kindScalar}
 	default:
@@ -204,24 +204,65 @@ func (m *models) objectType(sch *schema, hint string, s side) gotype {
 	return gotype{name: "map[string]any", kind: kindMap}
 }
 
+// enumNote is what the values of a set read as, where the document states the set coherently.
+//
+// Coherent means the values are of the type declared beside them. A document saying
+// {"type": "integer", "enum": ["0", "1"]} disagrees with itself, and a client picking a side there
+// bakes the disagreement into everything generated from it — so that one is left as its bare type,
+// and said out loud.
+func enumNote(sch *schema, declared string) string {
+	if len(sch.Enum) == 0 {
+		return ""
+	}
+
+	written := make([]string, 0, len(sch.Enum))
+
+	for _, value := range sch.Enum {
+		if !holds(value, declared) {
+			// Written as JSON rather than with %v, which prints a string bare and makes
+			// ["0", "1"] read as the [0 1] the document was trying to say.
+			said, _ := json.Marshal(sch.Enum)
+			warn("Left as a bare %s: %s is not a set of that type.", declared, said)
+
+			return ""
+		}
+
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			fail("an enum value cannot be written: %v", value)
+		}
+
+		written = append(written, string(encoded))
+	}
+
+	// A bare type rather than a named one of its own: a value the API adds tomorrow reaches the
+	// caller as itself rather than as something this package refuses to hold. What a caller writes
+	// with are the constants beside it.
+	return "One of " + strings.Join(written, ", ") + "."
+}
+
+// holds says whether a value read out of the document is of the type declared beside it. Every
+// number in JSON arrives as a float64, whether it was written with a point or without one.
+func holds(value any, declared string) bool {
+	switch declared {
+	case "string":
+		_, ok := value.(string)
+
+		return ok
+	case "integer", "number":
+		_, ok := value.(float64)
+
+		return ok
+	default:
+		return false
+	}
+}
+
 func (m *models) stringType(sch *schema) gotype {
 	held := gotype{name: "string", kind: kindScalar}
 
-	if len(sch.Enum) > 0 {
-		written := make([]string, 0, len(sch.Enum))
-
-		for _, value := range sch.Enum {
-			encoded, err := json.Marshal(value)
-			if err != nil {
-				fail("an enum value cannot be written: %v", value)
-			}
-
-			written = append(written, string(encoded))
-		}
-
-		// A string rather than a named type of its own: a value we add tomorrow reaches the caller
-		// as itself rather than as something this package refuses to hold.
-		held.note = "One of " + strings.Join(written, ", ") + "."
+	if note := enumNote(sch, "string"); note != "" {
+		held.note = note
 
 		return held
 	}
