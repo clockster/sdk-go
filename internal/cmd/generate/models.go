@@ -46,6 +46,10 @@ type models struct {
 	shapes     map[string]string
 	components map[string]side
 
+	// The closed sets of values met along the way, by the name the document gives each. See
+	// sets.go for what is written from them.
+	sets map[string][]string
+
 	// One operation's shapes, so the same object under two keys of one answer is named once, and
 	// where the shape came from, for the comment above it.
 	scope  string
@@ -59,6 +63,7 @@ func newModels(doc *document, reserved []string) *models {
 		taken:      map[string]bool{},
 		shapes:     map[string]string{},
 		components: map[string]side{},
+		sets:       map[string][]string{},
 	}
 
 	for _, name := range reserved {
@@ -263,6 +268,8 @@ func (m *models) stringType(sch *schema) gotype {
 
 	if note := enumNote(sch, "string"); note != "" {
 		held.note = note
+
+		m.rememberSet(sch)
 
 		return held
 	}
