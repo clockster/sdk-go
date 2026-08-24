@@ -30,6 +30,7 @@ const (
 	specPath   = "openapi/company-v3.json"
 	modelsPath = "models.gen.go"
 	apiPath    = "api.gen.go"
+	setsPath   = "sets.gen.go"
 )
 
 // Exported names the hand-written half of the package already holds. A generated shape that wants
@@ -71,8 +72,9 @@ func main() {
 
 	write(modelsPath, modelsSource(m))
 	write(apiPath, apiSource(endpoints, tree))
+	write(setsPath, setsSource(m))
 
-	fmt.Printf("%d operations, %d shapes.\n", len(endpoints), len(m.order))
+	fmt.Printf("%d operations, %d shapes, %d sets.\n", len(endpoints), len(m.order), len(m.sets))
 }
 
 func parse(doc *document) []*endpoint {
@@ -361,6 +363,13 @@ func lowerFirst(text string) string {
 	}
 
 	return strings.ToLower(text[:1]) + text[1:]
+}
+
+// warn says something about the document without stopping. A document that disagrees with itself
+// is worth hearing about on every run, and leaving the field as its bare type is better than
+// guessing which half of the disagreement was meant.
+func warn(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
 }
 
 func fail(format string, args ...any) {

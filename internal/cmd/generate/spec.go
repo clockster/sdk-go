@@ -54,12 +54,15 @@ type discriminator struct {
 }
 
 type schema struct {
-	Ref                  string          `json:"$ref"`
-	Type                 json.RawMessage `json:"type"`
-	Items                *schema         `json:"items"`
-	Properties           *props          `json:"properties"`
-	Required             []string        `json:"required"`
-	Enum                 []any           `json:"enum"`
+	Ref        string          `json:"$ref"`
+	Type       json.RawMessage `json:"type"`
+	Items      *schema         `json:"items"`
+	Properties *props          `json:"properties"`
+	Required   []string        `json:"required"`
+	Enum       []any           `json:"enum"`
+	// What every client calls this set of values, said by the document so that four generators do
+	// not each work out a name of their own. See sets.go.
+	Set                  string          `json:"x-clockster-set"`
 	AdditionalProperties json.RawMessage `json:"additionalProperties"`
 	OneOf                []*schema       `json:"oneOf"`
 	Discriminator        *discriminator  `json:"discriminator"`

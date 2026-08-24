@@ -9,7 +9,8 @@ on:
     tags: ['v*']
 
 permissions:
-  contents: read
+  # write, so the tag gets a release with the changelog's section for it.
+  contents: write
 
 jobs:
   publish:
@@ -36,6 +37,20 @@ jobs:
           declared="$(grep -oE 'Version = "[^"]+"' client.go | cut -d'"' -f2)"
           test "$tagged" = "$declared" || { echo "::error::Tag $tagged does not match Version $declared in client.go."; exit 1; }
 
+      # The notes are the changelog's section for this tag: written with the change and reviewed
+      # with it, rather than from memory once it is out. No section, no release.
+      - name: Read the release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v want="## $version" '
+            $0 == want { inside = 1; next }
+            inside && /^## / { exit }
+            inside { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+
+          grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md" \
+            || { echo "::error::CHANGELOG.md has no section for $version."; exit 1; }
+
       - name: Ask the module proxy for this version
         run: |
           module="$(go list -m)"
@@ -49,3 +64,8 @@ jobs:
 
           echo "::error::The proxy does not serve $module@$GITHUB_REF_NAME yet."
           exit 1
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"

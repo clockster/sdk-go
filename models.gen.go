@@ -131,21 +131,31 @@ type PageMeta struct {
 
 // AttendanceRecordBody is part of what POST /company/v3/attendance takes.
 type AttendanceRecordBody struct {
+	// The marks to record, up to 100 a call.
 	Attendance []AttendanceRecordAttendanceItem `json:"attendance"`
 }
 
 // AttendanceRecordAttendanceItem is part of what POST /company/v3/attendance takes.
 type AttendanceRecordAttendanceItem struct {
-	UserID     int64      `json:"user_id"`
-	LocationID Opt[int64] `json:"location_id,omitzero"`
-	ShiftID    Opt[int64] `json:"shift_id,omitzero"`
+	// The employee this belongs to, by the id this API issued.
+	UserID int64 `json:"user_id"`
 
+	// Where the mark was made, by id.
+	LocationID Opt[int64] `json:"location_id,omitzero"`
+
+	// The shift this mark belongs to, by id, where you know which one it is.
+	ShiftID Opt[int64] `json:"shift_id,omitzero"`
+
+	// What the mark is: coming in, going out, or going on a break.
 	// One of "out", "in", "break".
 	Status string `json:"status"`
 
-	// An instant, ISO 8601 with an offset.
-	Datetime string      `json:"datetime"`
-	Comment  Opt[string] `json:"comment,omitzero"`
+	// When it happened, as `2026-08-01T09:00:00+05:00`. The offset is part of it rather than
+	// optional. Not in the future, and at most 24 hours late.
+	Datetime string `json:"datetime"`
+
+	// A note carried alongside, for people to read.
+	Comment Opt[string] `json:"comment,omitzero"`
 }
 
 // AttendanceRecordResponse is part of what POST /company/v3/attendance answers.
@@ -238,13 +248,21 @@ type DepartmentsListRow struct {
 
 // DepartmentsUpsertBody is part of what POST /company/v3/departments/upsert takes.
 type DepartmentsUpsertBody struct {
+	// The rows to write. Each carries your own `external_id`, and a row already stored under that key
+	// is updated rather than added.
 	Items []DepartmentsUpsertItem `json:"items"`
 }
 
 // DepartmentsUpsertItem is part of what POST /company/v3/departments/upsert takes.
 type DepartmentsUpsertItem struct {
-	ExternalID  string      `json:"external_id"`
-	Title       string      `json:"title"`
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
+	ExternalID string `json:"external_id"`
+
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Free text about this row, for people rather than for your code.
 	Description Opt[string] `json:"description,omitzero"`
 }
 
@@ -483,38 +501,54 @@ type DocumentsListRowLaborContract struct {
 
 // DocumentsUpsertBody is part of what POST /company/v3/documents/upsert takes.
 type DocumentsUpsertBody struct {
+	// The documents to write, up to 100 a call.
 	Documents []DocumentsUpsertDocument `json:"documents"`
 }
 
 // DocumentsUpsertDocument is part of what POST /company/v3/documents/upsert takes.
 type DocumentsUpsertDocument struct {
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
 	ExternalID string `json:"external_id"`
 
+	// Which kind of document this is.
 	// One of "passport", "cv", "diploma", "medical", "photo", "other", "medical_book",
 	// "employment_agreement", "termination_of_employment_agreement", "equipment_agreement",
 	// "application", "order", "supplementary_agreement", "job_description", "nda",
 	// "non_compete_agreement", "data_processing_agreement", "act_of_service_acceptance",
 	// "health_and_safety_briefing", "shift_schedule", "letter", "vacation_schedule", "contract",
 	// "agreement", "goods_release_note", "reconciliation_act", "return_to_supplier".
-	Type           string      `json:"type"`
-	UserID         int64       `json:"user_id"`
-	Name           Opt[string] `json:"name,omitzero"`
+	Type string `json:"type"`
+
+	// The employee this belongs to, by the id this API issued.
+	UserID int64 `json:"user_id"`
+
+	// What to call this document.
+	Name Opt[string] `json:"name,omitzero"`
+
+	// The number written on the contract.
 	ContractNumber Opt[string] `json:"contract_number,omitzero"`
 
+	// The terms the contract is on.
 	// One of "full_time", "part_time", "irregular_hours", "contract_1", "contract_2",
 	// "apprenticeship", "traineeship", "piece_rate", "probation", "outstaffing".
 	EmploymentType Opt[string] `json:"employment_type,omitzero"`
 
-	// A plain date, YYYY-MM-DD.
+	// The day it begins, `YYYY-MM-DD`.
 	StartDate Opt[string] `json:"start_date,omitzero"`
 
-	// A plain date, YYYY-MM-DD.
+	// The day it ends, `YYYY-MM-DD`.
 	EndDate Opt[string] `json:"end_date,omitzero"`
 
-	// A plain date, YYYY-MM-DD.
-	ExpirationDate   Opt[string] `json:"expiration_date,omitzero"`
+	// The day it stops being valid, `YYYY-MM-DD`.
+	ExpirationDate Opt[string] `json:"expiration_date,omitzero"`
+
+	// The document this one hangs under, by your key for that one.
 	ParentExternalID Opt[string] `json:"parent_external_id,omitzero"`
-	FileID           Opt[int64]  `json:"file_id,omitzero"`
+
+	// The stored file this points at, from `POST /files`. Upload the bytes first and name the id it
+	// answered with.
+	FileID Opt[int64] `json:"file_id,omitzero"`
 }
 
 // DocumentsUpsertResponse is part of what POST /company/v3/documents/upsert answers.
@@ -531,6 +565,7 @@ type FilesUploadForm struct {
 	// Filename is the name the bytes travel under. Empty is sent as "upload".
 	Filename string
 
+	// What to call this document.
 	Name Opt[string] `json:"name,omitzero"`
 }
 
@@ -630,18 +665,35 @@ type LocationsListRow struct {
 
 // LocationsUpsertBody is part of what POST /company/v3/locations/upsert takes.
 type LocationsUpsertBody struct {
+	// The rows to write. Each carries your own `external_id`, and a row already stored under that key
+	// is updated rather than added.
 	Items []LocationsUpsertItem `json:"items"`
 }
 
 // LocationsUpsertItem is part of what POST /company/v3/locations/upsert takes.
 type LocationsUpsertItem struct {
-	ExternalID  string       `json:"external_id"`
-	Title       string       `json:"title"`
-	Description Opt[string]  `json:"description,omitzero"`
-	Code        Opt[string]  `json:"code,omitzero"`
-	Latitude    Opt[float64] `json:"latitude,omitzero"`
-	Longitude   Opt[float64] `json:"longitude,omitzero"`
-	Radius      Opt[int64]   `json:"radius,omitzero"`
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
+	ExternalID string `json:"external_id"`
+
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Free text about this row, for people rather than for your code.
+	Description Opt[string] `json:"description,omitzero"`
+
+	// A short code people read, yours to choose. The listing beside this write can filter on it.
+	Code Opt[string] `json:"code,omitzero"`
+
+	// Where the location is. A mobile clock-in is checked against this and `radius`.
+	Latitude Opt[float64] `json:"latitude,omitzero"`
+
+	// Where the location is. A mobile clock-in is checked against this and `radius`.
+	Longitude Opt[float64] `json:"longitude,omitzero"`
+
+	// How far from those coordinates a mobile clock-in still counts, in metres. A location written
+	// without one gets 100.
+	Radius Opt[int64] `json:"radius,omitzero"`
 }
 
 // LocationsUpsertResponse is part of what POST /company/v3/locations/upsert answers.
@@ -819,13 +871,21 @@ type PositionsListRow struct {
 
 // PositionsUpsertBody is part of what POST /company/v3/positions/upsert takes.
 type PositionsUpsertBody struct {
+	// The rows to write. Each carries your own `external_id`, and a row already stored under that key
+	// is updated rather than added.
 	Items []PositionsUpsertItem `json:"items"`
 }
 
 // PositionsUpsertItem is part of what POST /company/v3/positions/upsert takes.
 type PositionsUpsertItem struct {
-	ExternalID  string      `json:"external_id"`
-	Title       string      `json:"title"`
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
+	ExternalID string `json:"external_id"`
+
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Free text about this row, for people rather than for your code.
 	Description Opt[string] `json:"description,omitzero"`
 }
 
@@ -836,6 +896,7 @@ type PositionsUpsertResponse struct {
 
 // SchedulesCreateBody is part of what POST /company/v3/schedules takes.
 type SchedulesCreateBody struct {
+	// The days to write, up to 25 a call. Each is one of three shapes, and `type` says which.
 	Schedules []SchedulesCreateSchedule `json:"schedules"`
 }
 
@@ -852,64 +913,121 @@ func (FreeSchedule) isSchedulesCreateSchedule()  {}
 func (LeaveSchedule) isSchedulesCreateSchedule() {}
 
 type WorkSchedule struct {
+	// Which kind of day this is, and with it what else the item requires.
 	// One of "work", "free", "leave".
-	Type         string     `json:"type"`
-	Dates        []string   `json:"dates"`
-	Users        []int64    `json:"users"`
-	LocationID   Opt[int64] `json:"location_id,omitzero"`
-	DepartmentID Opt[int64] `json:"department_id,omitzero"`
-	PositionID   Opt[int64] `json:"position_id,omitzero"`
-	Timezone     string     `json:"timezone"`
+	Type string `json:"type"`
 
-	// An instant, ISO 8601 with an offset.
+	// The days this applies to, each `YYYY-MM-DD`. No repeats.
+	Dates []string `json:"dates"`
+
+	// Who the day is for, by id. At least one, and no repeats.
+	Users []int64 `json:"users"`
+
+	// The location this is filed against, by id. Null clears it.
+	LocationID Opt[int64] `json:"location_id,omitzero"`
+
+	// The department this is filed against, by id. Null clears it.
+	DepartmentID Opt[int64] `json:"department_id,omitzero"`
+
+	// The position this is filed against, by id. Null clears it.
+	PositionID Opt[int64] `json:"position_id,omitzero"`
+
+	// The UTC offset the clock times beside it are read in — `Z`, or `+05:00`. An offset rather than
+	// a zone name, so the day is fixed to a moment rather than to a rule that may be changed later.
+	Timezone string `json:"timezone"`
+
+	// When it starts, as a clock time `HH:MM:SS`, read in the offset beside it.
 	Start Opt[string] `json:"start,omitzero"`
 
-	// An instant, ISO 8601 with an offset.
-	End        Opt[string]         `json:"end,omitzero"`
-	BreakTime  Opt[int64]          `json:"break_time,omitzero"`
-	GraceStart Opt[int64]          `json:"grace_start,omitzero"`
-	GraceEnd   Opt[int64]          `json:"grace_end,omitzero"`
-	Shifts     []WorkScheduleShift `json:"shifts,omitzero"`
+	// When it ends, as a clock time `HH:MM:SS`, read in the offset beside it.
+	End Opt[string] `json:"end,omitzero"`
+
+	// Unpaid break within the day, in seconds.
+	BreakTime Opt[int64] `json:"break_time,omitzero"`
+
+	// How late an arrival still counts as on time, in seconds.
+	GraceStart Opt[int64] `json:"grace_start,omitzero"`
+
+	// How early a departure still counts as a full day, in seconds.
+	GraceEnd Opt[int64] `json:"grace_end,omitzero"`
+
+	// Split the day into shifts instead of one span. Each carries its own clock times and may sit
+	// somewhere other than the day does.
+	Shifts []WorkScheduleShift `json:"shifts,omitzero"`
 }
 
 type WorkScheduleShift struct {
-	// An instant, ISO 8601 with an offset.
+	// When it starts, as a clock time `HH:MM:SS`, read in the offset beside it.
 	Start string `json:"start"`
 
-	// An instant, ISO 8601 with an offset.
-	End          string     `json:"end"`
-	LocationID   Opt[int64] `json:"location_id,omitzero"`
+	// When it ends, as a clock time `HH:MM:SS`, read in the offset beside it.
+	End string `json:"end"`
+
+	// The location this is filed against, by id. Null clears it.
+	LocationID Opt[int64] `json:"location_id,omitzero"`
+
+	// The department this is filed against, by id. Null clears it.
 	DepartmentID Opt[int64] `json:"department_id,omitzero"`
-	PositionID   Opt[int64] `json:"position_id,omitzero"`
+
+	// The position this is filed against, by id. Null clears it.
+	PositionID Opt[int64] `json:"position_id,omitzero"`
 }
 
 type FreeSchedule struct {
+	// Which kind of day this is, and with it what else the item requires.
 	// One of "work", "free", "leave".
-	Type         string     `json:"type"`
-	Dates        []string   `json:"dates"`
-	Users        []int64    `json:"users"`
-	LocationID   Opt[int64] `json:"location_id,omitzero"`
-	DepartmentID Opt[int64] `json:"department_id,omitzero"`
-	PositionID   Opt[int64] `json:"position_id,omitzero"`
-	Timezone     string     `json:"timezone"`
+	Type string `json:"type"`
 
-	// An instant, ISO 8601 with an offset.
+	// The days this applies to, each `YYYY-MM-DD`. No repeats.
+	Dates []string `json:"dates"`
+
+	// Who the day is for, by id. At least one, and no repeats.
+	Users []int64 `json:"users"`
+
+	// The location this is filed against, by id. Null clears it.
+	LocationID Opt[int64] `json:"location_id,omitzero"`
+
+	// The department this is filed against, by id. Null clears it.
+	DepartmentID Opt[int64] `json:"department_id,omitzero"`
+
+	// The position this is filed against, by id. Null clears it.
+	PositionID Opt[int64] `json:"position_id,omitzero"`
+
+	// The UTC offset the clock times beside it are read in — `Z`, or `+05:00`. An offset rather than
+	// a zone name, so the day is fixed to a moment rather than to a rule that may be changed later.
+	Timezone string `json:"timezone"`
+
+	// When it starts, as a clock time `HH:MM:SS`, read in the offset beside it.
 	Start string `json:"start"`
 
-	// An instant, ISO 8601 with an offset.
-	End         string     `json:"end"`
+	// When it ends, as a clock time `HH:MM:SS`, read in the offset beside it.
+	End string `json:"end"`
+
+	// How long the person is expected to work that day, in seconds.
 	TimePlanned Opt[int64] `json:"time_planned,omitzero"`
 }
 
 type LeaveSchedule struct {
+	// Which kind of day this is, and with it what else the item requires.
 	// One of "work", "free", "leave".
-	Type         string     `json:"type"`
-	Dates        []string   `json:"dates"`
-	Users        []int64    `json:"users"`
-	LocationID   Opt[int64] `json:"location_id,omitzero"`
-	DepartmentID Opt[int64] `json:"department_id,omitzero"`
-	PositionID   Opt[int64] `json:"position_id,omitzero"`
+	Type string `json:"type"`
 
+	// The days this applies to, each `YYYY-MM-DD`. No repeats.
+	Dates []string `json:"dates"`
+
+	// Who the day is for, by id. At least one, and no repeats.
+	Users []int64 `json:"users"`
+
+	// The location this is filed against, by id. Null clears it.
+	LocationID Opt[int64] `json:"location_id,omitzero"`
+
+	// The department this is filed against, by id. Null clears it.
+	DepartmentID Opt[int64] `json:"department_id,omitzero"`
+
+	// The position this is filed against, by id. Null clears it.
+	PositionID Opt[int64] `json:"position_id,omitzero"`
+
+	// What kind of leave the day is.
 	// One of "annual", "unpaid", "sick", "unpaid_sick", "maternity", "paternity", "special",
 	// "day_off", "compensatory", "personal", "emergency", "unexcused_absence".
 	LeaveType string `json:"leave_type"`
@@ -1159,39 +1277,73 @@ type TasksListMeta struct {
 
 // TasksUpsertBody is part of what POST /company/v3/tasks/upsert takes.
 type TasksUpsertBody struct {
+	// The tasks to write, up to 100 a call.
 	Tasks []TasksUpsertTask `json:"tasks"`
 }
 
 // TasksUpsertTask is part of what POST /company/v3/tasks/upsert takes.
 type TasksUpsertTask struct {
-	ExternalID   string      `json:"external_id"`
-	Title        string      `json:"title"`
-	Description  Opt[string] `json:"description,omitzero"`
-	UserID       int64       `json:"user_id"`
-	CategoryID   Opt[int64]  `json:"category_id,omitzero"`
-	LocationID   Opt[int64]  `json:"location_id,omitzero"`
-	DepartmentID Opt[int64]  `json:"department_id,omitzero"`
-	PositionID   Opt[int64]  `json:"position_id,omitzero"`
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
+	ExternalID string `json:"external_id"`
 
-	// A plain date, YYYY-MM-DD.
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Free text about this row, for people rather than for your code.
+	Description Opt[string] `json:"description,omitzero"`
+
+	// The employee this belongs to, by the id this API issued.
+	UserID int64 `json:"user_id"`
+
+	// The category it belongs to, by id.
+	CategoryID Opt[int64] `json:"category_id,omitzero"`
+
+	// The location this is filed against, by id. Null clears it.
+	LocationID Opt[int64] `json:"location_id,omitzero"`
+
+	// The department this is filed against, by id. Null clears it.
+	DepartmentID Opt[int64] `json:"department_id,omitzero"`
+
+	// The position this is filed against, by id. Null clears it.
+	PositionID Opt[int64] `json:"position_id,omitzero"`
+
+	// The day it is due, `YYYY-MM-DD`.
 	DueDate Opt[string] `json:"due_date,omitzero"`
 
-	// An instant, ISO 8601 with an offset.
+	// When in the day it starts, as a clock time `HH:MM:SS`.
 	TimeStart Opt[string] `json:"time_start,omitzero"`
 
-	// An instant, ISO 8601 with an offset.
-	TimeEnd  Opt[string]           `json:"time_end,omitzero"`
-	Timezone Opt[string]           `json:"timezone,omitzero"`
-	Priority Opt[int64]            `json:"priority,omitzero"`
-	Active   Opt[bool]             `json:"active,omitzero"`
-	KpiPlan  Opt[float64]          `json:"kpi_plan,omitzero"`
-	Managers []int64               `json:"managers,omitzero"`
-	Items    []TasksUpsertTaskItem `json:"items,omitzero"`
+	// When in the day it ends, as a clock time `HH:MM:SS`.
+	TimeEnd Opt[string] `json:"time_end,omitzero"`
+
+	// The UTC offset the clock times beside it are read in — `Z`, or `+05:00`. An offset rather than
+	// a zone name, so the day is fixed to a moment rather than to a rule that may be changed later.
+	Timezone Opt[string] `json:"timezone,omitzero"`
+
+	// Whether the task is flagged as a priority: `1` if it is, `0` if not.
+	// One of 0, 1.
+	Priority Opt[int64] `json:"priority,omitzero"`
+
+	// Whether the task is active.
+	Active Opt[bool] `json:"active,omitzero"`
+
+	// The planned figure this task is measured against.
+	KpiPlan Opt[float64] `json:"kpi_plan,omitzero"`
+
+	// Who may decide on this task, by id. Up to ten.
+	Managers []int64 `json:"managers,omitzero"`
+
+	// The checklist inside this task, in the order given.
+	Items []TasksUpsertTaskItem `json:"items,omitzero"`
 }
 
 // TasksUpsertTaskItem is part of what POST /company/v3/tasks/upsert takes.
 type TasksUpsertTaskItem struct {
-	Title string     `json:"title"`
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Where this item sits in the checklist, counting from zero.
 	Order Opt[int64] `json:"order,omitzero"`
 }
 
@@ -1442,13 +1594,21 @@ type UserFiltersListRow struct {
 
 // UserFiltersUpsertBody is part of what POST /company/v3/user-filters/upsert takes.
 type UserFiltersUpsertBody struct {
+	// The rows to write. Each carries your own `external_id`, and a row already stored under that key
+	// is updated rather than added.
 	Items []UserFiltersUpsertItem `json:"items"`
 }
 
 // UserFiltersUpsertItem is part of what POST /company/v3/user-filters/upsert takes.
 type UserFiltersUpsertItem struct {
-	ExternalID  string      `json:"external_id"`
-	Title       string      `json:"title"`
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
+	ExternalID string `json:"external_id"`
+
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Free text about this row, for people rather than for your code.
 	Description Opt[string] `json:"description,omitzero"`
 }
 
@@ -1578,13 +1738,17 @@ type UserRequestsListRowContentClockin struct {
 
 // UsersDismissBody is part of what POST /company/v3/users/dismiss takes.
 type UsersDismissBody struct {
+	// The people to dismiss, up to 100 a call.
 	Users []UsersDismissUser `json:"users"`
 }
 
 // UsersDismissUser is part of what POST /company/v3/users/dismiss takes.
 type UsersDismissUser struct {
+	// Who to dismiss, by your key for them. This or `id`, exactly one per item.
 	ExternalID Opt[string] `json:"external_id,omitzero"`
-	ID         Opt[int64]  `json:"id,omitzero"`
+
+	// Who to dismiss, by the id this API issued. This or `external_id`, exactly one per item.
+	ID Opt[int64] `json:"id,omitzero"`
 }
 
 // UsersDismissResponse is part of what POST /company/v3/users/dismiss answers.
@@ -1772,6 +1936,8 @@ type UsersListParams struct {
 	UserFilters []int64 `json:"user_filters,omitzero"`
 
 	// Only people on these employment terms.
+	// One of "full_time", "part_time", "irregular_hours", "contract_1", "contract_2",
+	// "apprenticeship", "traineeship", "piece_rate", "probation", "outstaffing".
 	Employment []string `json:"employment,omitzero"`
 
 	// Relations to load, comma-separated. Anything not named is absent from the answer rather than
@@ -1913,51 +2079,94 @@ type UsersListRowMeta struct {
 
 // UsersUpsertBody is part of what POST /company/v3/users/upsert takes.
 type UsersUpsertBody struct {
+	// The people to write, up to 100 a call.
 	Users []UsersUpsertUser `json:"users"`
 }
 
 // UsersUpsertUser is part of what POST /company/v3/users/upsert takes.
 type UsersUpsertUser struct {
+	// Your own key for this row. Send it on every write and the next one updates rather than
+	// duplicates.
 	ExternalID Opt[string] `json:"external_id,omitzero"`
-	FirstName  string      `json:"first_name"`
+
+	// Given name. The one field every person must have.
+	FirstName string `json:"first_name"`
+
+	// Middle name, where the place they live uses one.
 	MiddleName Opt[string] `json:"middle_name,omitzero"`
-	LastName   Opt[string] `json:"last_name,omitzero"`
-	Code       Opt[string] `json:"code,omitzero"`
-	Email      Opt[string] `json:"email,omitzero"`
-	Phone      Opt[string] `json:"phone,omitzero"`
+
+	// Family name.
+	LastName Opt[string] `json:"last_name,omitzero"`
+
+	// A short code people read, yours to choose. The listing beside this write can filter on it.
+	Code Opt[string] `json:"code,omitzero"`
+
+	// Their email address.
+	Email Opt[string] `json:"email,omitzero"`
+
+	// Their phone number.
+	Phone Opt[string] `json:"phone,omitzero"`
+
+	// A second phone number.
 	ExtraPhone Opt[string] `json:"extra_phone,omitzero"`
 
+	// Whether the person administers the company or is an employee in it.
 	// One of "admin", "employee".
 	Role string `json:"role"`
 
+	// Their gender, as the personnel file records it.
 	// One of "male", "female", "other".
 	Gender Opt[string] `json:"gender,omitzero"`
 
+	// Which language the application speaks to them in.
 	// One of "en", "ru", "kk", "uk", "id", "uz", "az", "fr", "vi", "zh".
-	Locale   Opt[string] `json:"locale,omitzero"`
+	Locale Opt[string] `json:"locale,omitzero"`
+
+	// The zone they work in, as a name — `Asia/Almaty`. A name rather than an offset, unlike a
+	// schedule or a task, because a person's zone follows the rules of the place they are in.
 	Timezone Opt[string] `json:"timezone,omitzero"`
 
-	// A plain date, YYYY-MM-DD.
+	// The day they started, `YYYY-MM-DD`.
 	DateHire Opt[string] `json:"date_hire,omitzero"`
 
-	// A plain date, YYYY-MM-DD.
+	// The day they leave or left, `YYYY-MM-DD`. Filled in for you on a dismissal that does not carry
+	// one.
 	DateLeave Opt[string] `json:"date_leave,omitzero"`
 
-	// A plain date, YYYY-MM-DD.
-	DateBirth   Opt[string] `json:"date_birth,omitzero"`
-	NationalID  Opt[string] `json:"national_id,omitzero"`
-	TaxID       Opt[string] `json:"tax_id,omitzero"`
+	// Their date of birth, `YYYY-MM-DD`.
+	DateBirth Opt[string] `json:"date_birth,omitzero"`
+
+	// Their national identifier.
+	NationalID Opt[string] `json:"national_id,omitzero"`
+
+	// Their tax identifier.
+	TaxID Opt[string] `json:"tax_id,omitzero"`
+
+	// Their insurance identifier.
 	InsuranceID Opt[string] `json:"insurance_id,omitzero"`
 
+	// The terms they are employed on.
 	// One of "full_time", "part_time", "irregular_hours", "contract_1", "contract_2",
 	// "apprenticeship", "traineeship", "piece_rate", "probation", "outstaffing".
-	Employment     Opt[string] `json:"employment,omitzero"`
+	Employment Opt[string] `json:"employment,omitzero"`
+
+	// Free text about what this person is responsible for.
 	Responsibility Opt[string] `json:"responsibility,omitzero"`
-	LocationID     int64       `json:"location_id"`
-	Locations      []int64     `json:"locations,omitzero"`
-	DepartmentID   Opt[int64]  `json:"department_id,omitzero"`
-	PositionID     Opt[int64]  `json:"position_id,omitzero"`
-	UserFilters    []int64     `json:"user_filters,omitzero"`
+
+	// The location they are filed under, by id. Required — everybody belongs somewhere.
+	LocationID int64 `json:"location_id"`
+
+	// Every other location they may work at, by id, beside the one they are filed under.
+	Locations []int64 `json:"locations,omitzero"`
+
+	// The department this is filed against, by id. Null clears it.
+	DepartmentID Opt[int64] `json:"department_id,omitzero"`
+
+	// The position this is filed against, by id. Null clears it.
+	PositionID Opt[int64] `json:"position_id,omitzero"`
+
+	// The groupings they belong to, by id.
+	UserFilters []int64 `json:"user_filters,omitzero"`
 }
 
 // UsersUpsertResponse is part of what POST /company/v3/users/upsert answers.
@@ -1967,24 +2176,40 @@ type UsersUpsertResponse struct {
 
 // WebhooksCreateBody is part of what POST /company/v3/webhooks takes.
 type WebhooksCreateBody struct {
-	Title        Opt[string] `json:"title,omitzero"`
-	URL          string      `json:"url"`
+	// What to call this endpoint, so a list of them reads.
+	Title Opt[string] `json:"title,omitzero"`
+
+	// Where deliveries are posted. `http` or `https`.
+	URL string `json:"url"`
+
+	// An address to reach you about this endpoint.
 	ContactEmail Opt[string] `json:"contact_email,omitzero"`
 
+	// Which events this endpoint receives. At least one, and no repeats.
 	// One of "user.created", "user.updated", "user.deleted", "user.restored", "user.purged",
 	// "location.created", "location.updated", "location.deleted", "department.created",
 	// "department.updated", "department.deleted", "position.created", "position.updated",
 	// "position.deleted", "task.created", "task.completed", "task.approved", "task.rejected",
 	// "task.deleted".
-	Events    []string                 `json:"events"`
+	Events []string `json:"events"`
+
+	// Send deliveries with HTTP basic authentication. Not alongside `auth_token`.
 	AuthBasic *WebhooksCreateAuthBasic `json:"auth_basic,omitzero"`
-	AuthToken Opt[string]              `json:"auth_token,omitzero"`
-	Active    bool                     `json:"active"`
+
+	// Send deliveries carrying this bearer token. Not alongside `auth_basic`.
+	AuthToken Opt[string] `json:"auth_token,omitzero"`
+
+	// Whether the endpoint receives deliveries. False stops them without deleting it.
+	Active bool `json:"active"`
 }
 
-// WebhooksCreateAuthBasic is part of what POST /company/v3/webhooks takes.
+// WebhooksCreateAuthBasic send deliveries with HTTP basic authentication. Not alongside
+// `auth_token`.
 type WebhooksCreateAuthBasic struct {
+	// The user for `auth_basic`.
 	Username Opt[string] `json:"username,omitzero"`
+
+	// The password for `auth_basic`.
 	Password Opt[string] `json:"password,omitzero"`
 }
 
@@ -2146,24 +2371,40 @@ type WebhooksRotateSecretDataHealth struct {
 
 // WebhooksUpdateBody is part of what PUT /company/v3/webhooks/{id} takes.
 type WebhooksUpdateBody struct {
-	Title        Opt[string] `json:"title,omitzero"`
-	URL          string      `json:"url"`
+	// What to call this endpoint, so a list of them reads.
+	Title Opt[string] `json:"title,omitzero"`
+
+	// Where deliveries are posted. `http` or `https`.
+	URL string `json:"url"`
+
+	// An address to reach you about this endpoint.
 	ContactEmail Opt[string] `json:"contact_email,omitzero"`
 
+	// Which events this endpoint receives. At least one, and no repeats.
 	// One of "user.created", "user.updated", "user.deleted", "user.restored", "user.purged",
 	// "location.created", "location.updated", "location.deleted", "department.created",
 	// "department.updated", "department.deleted", "position.created", "position.updated",
 	// "position.deleted", "task.created", "task.completed", "task.approved", "task.rejected",
 	// "task.deleted".
-	Events    []string                 `json:"events"`
+	Events []string `json:"events"`
+
+	// Send deliveries with HTTP basic authentication. Not alongside `auth_token`.
 	AuthBasic *WebhooksUpdateAuthBasic `json:"auth_basic,omitzero"`
-	AuthToken Opt[string]              `json:"auth_token,omitzero"`
-	Active    bool                     `json:"active"`
+
+	// Send deliveries carrying this bearer token. Not alongside `auth_basic`.
+	AuthToken Opt[string] `json:"auth_token,omitzero"`
+
+	// Whether the endpoint receives deliveries. False stops them without deleting it.
+	Active bool `json:"active"`
 }
 
-// WebhooksUpdateAuthBasic is part of what PUT /company/v3/webhooks/{id} takes.
+// WebhooksUpdateAuthBasic send deliveries with HTTP basic authentication. Not alongside
+// `auth_token`.
 type WebhooksUpdateAuthBasic struct {
+	// The user for `auth_basic`.
 	Username Opt[string] `json:"username,omitzero"`
+
+	// The password for `auth_basic`.
 	Password Opt[string] `json:"password,omitzero"`
 }
 

@@ -52,7 +52,7 @@ func main() {
 		Users: []clockster.UsersUpsertUser{{
 			ExternalID: clockster.Set("HR-1"),
 			FirstName:  "Aisulu",
-			Role:       "employee",
+			Role:       clockster.UsersRoleEmployee,
 			LocationID: locations.Data[0].ID,
 		}},
 	})
@@ -104,6 +104,35 @@ clockster.UsersUpsertUser{
 
 `clockster.Deref` reads a pointer that may be nil, and `clockster.Ptr` writes a required field that
 accepts null.
+
+## Sets of values
+
+Where a field takes one of a fixed set, the set has a name and a constant per value:
+
+```go
+_, err = client.Users.Upsert(ctx, &clockster.UsersUpsertBody{
+	Users: []clockster.UsersUpsertUser{{
+		ExternalID: clockster.Set("HR-1"),
+		FirstName:  "Aisulu",
+		Role:       clockster.UsersRoleEmployee,
+		LocationID: 3,
+	}},
+})
+
+people, err := client.Users.List(ctx, &clockster.UsersListParams{
+	Status:  clockster.Set(clockster.UsersStatusActive),
+	Include: []string{clockster.UsersIncludeLocation},
+})
+```
+
+Untyped constants rather than a named type, so the field stays a `string` and one goes wherever a
+string goes. `UsersRoleValues()` answers the lot, in the order the document names them, which is
+what a check against a file or a dropdown wants.
+
+The fields stay strings on purpose. Every set is on something you send and none is in an answer —
+that is deliberate on the API's part — so a `status` we start answering with next year reaches your
+code as the string it is, where a named type would have refused to hold it. Write against the set
+and read whatever arrives.
 
 ## Paging
 
