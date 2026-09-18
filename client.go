@@ -14,7 +14,7 @@ const DefaultBaseURL = "https://api.clockster.com"
 const DefaultTimeout = 30 * time.Second
 
 // Version is this package, as it goes out in the User-Agent.
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 // ErrNoToken is what New answers without a key.
 var ErrNoToken = errors.New("clockster: a company API key is required, issued under Settings, API")
