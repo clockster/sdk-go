@@ -396,7 +396,9 @@ type DocumentsListParams struct {
 	// "application", "order", "supplementary_agreement", "job_description", "nda",
 	// "non_compete_agreement", "data_processing_agreement", "act_of_service_acceptance",
 	// "health_and_safety_briefing", "shift_schedule", "letter", "vacation_schedule", "contract",
-	// "agreement", "goods_release_note", "reconciliation_act", "return_to_supplier".
+	// "agreement", "goods_release_note", "reconciliation_act", "return_to_supplier",
+	// "driver_license", "birth_certificate", "marriage_certificate", "divorce_certificate",
+	// "change_fio_certificate".
 	Types []string `json:"types,omitzero"`
 
 	// Only documents covering these employment terms.
@@ -517,7 +519,9 @@ type DocumentsUpsertDocument struct {
 	// "application", "order", "supplementary_agreement", "job_description", "nda",
 	// "non_compete_agreement", "data_processing_agreement", "act_of_service_acceptance",
 	// "health_and_safety_briefing", "shift_schedule", "letter", "vacation_schedule", "contract",
-	// "agreement", "goods_release_note", "reconciliation_act", "return_to_supplier".
+	// "agreement", "goods_release_note", "reconciliation_act", "return_to_supplier",
+	// "driver_license", "birth_certificate", "marriage_certificate", "divorce_certificate",
+	// "change_fio_certificate".
 	Type string `json:"type"`
 
 	// The employee this belongs to, by the id this API issued.
