@@ -148,7 +148,8 @@ func DocumentsPartyValues() []string {
 // "supplementary_agreement", "job_description", "nda", "non_compete_agreement",
 // "data_processing_agreement", "act_of_service_acceptance", "health_and_safety_briefing",
 // "shift_schedule", "letter", "vacation_schedule", "contract", "agreement", "goods_release_note",
-// "reconciliation_act", "return_to_supplier".
+// "reconciliation_act", "return_to_supplier", "driver_license", "birth_certificate",
+// "marriage_certificate", "divorce_certificate", "change_fio_certificate".
 const (
 	DocumentsTypePassport                         = "passport"
 	DocumentsTypeCv                               = "cv"
@@ -177,6 +178,11 @@ const (
 	DocumentsTypeGoodsReleaseNote                 = "goods_release_note"
 	DocumentsTypeReconciliationAct                = "reconciliation_act"
 	DocumentsTypeReturnToSupplier                 = "return_to_supplier"
+	DocumentsTypeDriverLicense                    = "driver_license"
+	DocumentsTypeBirthCertificate                 = "birth_certificate"
+	DocumentsTypeMarriageCertificate              = "marriage_certificate"
+	DocumentsTypeDivorceCertificate               = "divorce_certificate"
+	DocumentsTypeChangeFioCertificate             = "change_fio_certificate"
 )
 
 // DocumentsTypeValues is every value of DocumentsType, in the order the document names them.
@@ -209,6 +215,11 @@ func DocumentsTypeValues() []string {
 		DocumentsTypeGoodsReleaseNote,
 		DocumentsTypeReconciliationAct,
 		DocumentsTypeReturnToSupplier,
+		DocumentsTypeDriverLicense,
+		DocumentsTypeBirthCertificate,
+		DocumentsTypeMarriageCertificate,
+		DocumentsTypeDivorceCertificate,
+		DocumentsTypeChangeFioCertificate,
 	}
 }
 
