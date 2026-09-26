@@ -252,6 +252,31 @@ func PayrollPayslipsStatusValues() []string {
 	}
 }
 
+// PayrollSingleAdjustmentsType is what this field is allowed to be. One of "service_charge",
+// "single_addition_pre_tax", "single_addition_post_tax", "single_loan",
+// "single_deduction_pre_tax", "single_deduction_post_tax".
+const (
+	PayrollSingleAdjustmentsTypeServiceCharge          = "service_charge"
+	PayrollSingleAdjustmentsTypeSingleAdditionPreTax   = "single_addition_pre_tax"
+	PayrollSingleAdjustmentsTypeSingleAdditionPostTax  = "single_addition_post_tax"
+	PayrollSingleAdjustmentsTypeSingleLoan             = "single_loan"
+	PayrollSingleAdjustmentsTypeSingleDeductionPreTax  = "single_deduction_pre_tax"
+	PayrollSingleAdjustmentsTypeSingleDeductionPostTax = "single_deduction_post_tax"
+)
+
+// PayrollSingleAdjustmentsTypeValues is every value of PayrollSingleAdjustmentsType, in the order
+// the document names them.
+func PayrollSingleAdjustmentsTypeValues() []string {
+	return []string{
+		PayrollSingleAdjustmentsTypeServiceCharge,
+		PayrollSingleAdjustmentsTypeSingleAdditionPreTax,
+		PayrollSingleAdjustmentsTypeSingleAdditionPostTax,
+		PayrollSingleAdjustmentsTypeSingleLoan,
+		PayrollSingleAdjustmentsTypeSingleDeductionPreTax,
+		PayrollSingleAdjustmentsTypeSingleDeductionPostTax,
+	}
+}
+
 // SchedulesLeaveType is what this field is allowed to be. One of "annual", "unpaid", "sick",
 // "unpaid_sick", "maternity", "paternity", "special", "day_off", "compensatory", "personal",
 // "emergency", "unexcused_absence".

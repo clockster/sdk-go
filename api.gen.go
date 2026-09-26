@@ -147,12 +147,16 @@ type Payroll struct {
 
 	// Payslips is `clockster.Payroll.Payslips`.
 	Payslips *PayrollPayslips
+
+	// SingleAdjustments is `clockster.Payroll.SingleAdjustments`.
+	SingleAdjustments *PayrollSingleAdjustments
 }
 
 func newPayroll(t *transport) *Payroll {
 	return &Payroll{
-		transport: t,
-		Payslips:  newPayrollPayslips(t),
+		transport:         t,
+		Payslips:          newPayrollPayslips(t),
+		SingleAdjustments: newPayrollSingleAdjustments(t),
 	}
 }
 
@@ -163,6 +167,17 @@ type PayrollPayslips struct {
 
 func newPayrollPayslips(t *transport) *PayrollPayslips {
 	return &PayrollPayslips{
+		transport: t,
+	}
+}
+
+// PayrollSingleAdjustments holds the operations of `clockster.Payroll.SingleAdjustments`.
+type PayrollSingleAdjustments struct {
+	*transport
+}
+
+func newPayrollSingleAdjustments(t *transport) *PayrollSingleAdjustments {
+	return &PayrollSingleAdjustments{
 		transport: t,
 	}
 }
@@ -1117,6 +1132,151 @@ func (n *PayrollPayslips) ListAll(ctx context.Context, params *PayrollPayslipsLi
 			page, err := n.List(ctx, &walked, opts...)
 			if err != nil {
 				var none PayrollPayslipsListRow
+
+				yield(none, err)
+
+				return
+			}
+
+			for _, row := range page.Data {
+				if !yield(row, nil) {
+					return
+				}
+			}
+
+			cursor := page.Meta.NextCursor
+
+			// A cursor that repeats would page until the process is killed, which is worse than
+			// stopping.
+			if cursor == nil || *cursor == "" || seen[*cursor] {
+				return
+			}
+
+			seen[*cursor] = true
+			walked.Cursor = Set(*cursor)
+		}
+	}
+}
+
+// Create is POST /company/v3/payroll/single-adjustments.
+//
+// Create single adjustments.
+//
+// Up to 100 one-off amounts — a bonus, a service charge, a penalty — each for one person
+// and one day. All or nothing: a `422` means none of the batch landed.
+//
+// **An adjustment is read when a payslip is calculated.** A `draft` payslip whose period
+// holds `date` takes it in on its next calculation. An `approved` or `paid` one does not:
+// it is recalculated only by hand in the web application, and nothing here tells you
+// whether that happened. Check the payslip's status for the month before filing into it.
+//
+// **Send an `Idempotency-Key`.** An adjustment carries no key of yours, so a retry after a
+// timeout files it a second time unless the header says it is the same attempt. The
+// answer lists what was created, in the order sent.
+//
+// This write has nothing of your own to match a second attempt against, so a retry of it is
+// safe only with WithIdempotencyKey.
+func (n *PayrollSingleAdjustments) Create(ctx context.Context, body *PayrollSingleAdjustmentsCreateBody, opts ...RequestOption) (*PayrollSingleAdjustmentsCreateResponse, error) {
+	if body == nil {
+		return nil, errNoBody
+	}
+
+	var out PayrollSingleAdjustmentsCreateResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodPost,
+		path:   "/company/v3/payroll/single-adjustments",
+		body:   body,
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// Delete is DELETE /company/v3/payroll/single-adjustments/{id}.
+//
+// Delete a single adjustment.
+//
+// Deletes the adjustment. A payslip already calculated with it keeps the amount until it
+// is calculated again — for an `approved` or `paid` one, only by hand in the web
+// application.
+//
+// Another company's id is a `404`.
+func (n *PayrollSingleAdjustments) Delete(ctx context.Context, id int64, opts ...RequestOption) (*PayrollSingleAdjustmentsDeleteResponse, error) {
+	var out PayrollSingleAdjustmentsDeleteResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodDelete,
+		path:   fmt.Sprintf("/company/v3/payroll/single-adjustments/%d", id),
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// List is GET /company/v3/payroll/single-adjustments.
+//
+// List single adjustments.
+//
+// One-off additions and deductions, oldest first, with who they are for and the day they
+// are dated.
+//
+// `amount` is never negative: `type` says whether it is added or taken off, and whether
+// before or after tax. `date_from` and `date_to` bound the day, inclusive.
+//
+// Rows filed in the web application are listed too, and may carry `13th_pay`, which is
+// computed there rather than filed here.
+func (n *PayrollSingleAdjustments) List(ctx context.Context, params *PayrollSingleAdjustmentsListParams, opts ...RequestOption) (*PayrollSingleAdjustmentsListResponse, error) {
+	query := url.Values{}
+
+	if params != nil {
+		queryOpt(query, "per_page", params.PerPage)
+		queryOpt(query, "cursor", params.Cursor)
+		queryList(query, "users", params.Users)
+		queryList(query, "types", params.Types)
+		queryOpt(query, "date_from", params.DateFrom)
+		queryOpt(query, "date_to", params.DateTo)
+	}
+
+	var out PayrollSingleAdjustmentsListResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodGet,
+		path:   "/company/v3/payroll/single-adjustments",
+		query:  query,
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// ListAll walks every page of List and answers a row at a time.
+//
+//	for row, err := range clockster.Payroll.SingleAdjustments.ListAll(ctx, params) {
+//		if err != nil {
+//			return err
+//		}
+//	}
+//
+// A refused page is answered where it was refused, so half a listing is never mistaken for the
+// whole of one. A cursor belongs to the filters it was issued under: change them and walk again.
+func (n *PayrollSingleAdjustments) ListAll(ctx context.Context, params *PayrollSingleAdjustmentsListParams, opts ...RequestOption) iter.Seq2[PayrollSingleAdjustmentsListRow, error] {
+	return func(yield func(PayrollSingleAdjustmentsListRow, error) bool) {
+		walked := PayrollSingleAdjustmentsListParams{}
+
+		if params != nil {
+			walked = *params
+		}
+
+		seen := map[string]bool{}
+
+		for {
+			page, err := n.List(ctx, &walked, opts...)
+			if err != nil {
+				var none PayrollSingleAdjustmentsListRow
 
 				yield(none, err)
 
