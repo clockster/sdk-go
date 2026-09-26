@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0
+
+### May break your build
+
+Nothing. Three operations and one set are new.
+
+### Changed in the API
+
+Reaches you whether or not you update this package.
+
+- `GET /payroll/payslips` answers the `external_id` of a dismissed employee. It was `null` on their
+  payslips.
+
+### New
+
+- `client.Payroll.SingleAdjustments`: `List`, `ListAll`, `Create` and `Delete` over
+  `/payroll/single-adjustments` — one-off additions and deductions that the next calculation of a
+  payslip takes in. `Create` files up to 100 at a time, all or nothing; pass
+  `clockster.WithIdempotencyKey` so a retry does not file them twice.
+- A constant per type of `PayrollSingleAdjustmentsType` in `sets.gen.go`, and the six in
+  `PayrollSingleAdjustmentsTypeValues()`.
+
 ## 0.3.0
 
 ### May break your build
