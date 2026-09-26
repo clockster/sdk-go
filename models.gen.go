@@ -808,6 +808,108 @@ type PayrollPayslipsListMeta struct {
 	PrevCursor *string `json:"prev_cursor"`
 }
 
+// PayrollSingleAdjustmentsCreateBody is part of what POST /company/v3/payroll/single-adjustments takes.
+type PayrollSingleAdjustmentsCreateBody struct {
+	// The adjustments to file, up to 100 a call.
+	Adjustments []PayrollSingleAdjustmentsCreateAdjustment `json:"adjustments"`
+}
+
+// PayrollSingleAdjustmentsCreateAdjustment is part of what POST /company/v3/payroll/single-adjustments takes.
+type PayrollSingleAdjustmentsCreateAdjustment struct {
+	// The employee this belongs to, by the id this API issued.
+	UserID int64 `json:"user_id"`
+
+	// What the amount does: an addition or a deduction, before or after tax, a service charge or a
+	// one-off loan.
+	// One of "service_charge", "single_addition_pre_tax", "single_addition_post_tax", "single_loan",
+	// "single_deduction_pre_tax", "single_deduction_post_tax".
+	Type string `json:"type"`
+
+	// How much, never negative — `type` says which way it goes. At most two decimal places.
+	Amount float64 `json:"amount"`
+
+	// The day it is dated, `YYYY-MM-DD`. The payslip whose period holds this day takes it in.
+	Date string `json:"date"`
+
+	// The name this is shown under.
+	Title Opt[string] `json:"title,omitzero"`
+}
+
+// PayrollSingleAdjustmentsCreateResponse is part of what POST /company/v3/payroll/single-adjustments answers.
+type PayrollSingleAdjustmentsCreateResponse struct {
+	Data []PayrollSingleAdjustmentsCreateRow `json:"data"`
+}
+
+// PayrollSingleAdjustmentsCreateRow is part of what POST /company/v3/payroll/single-adjustments answers.
+type PayrollSingleAdjustmentsCreateRow struct {
+	ID        int64                                 `json:"id"`
+	User      PayrollSingleAdjustmentsCreateRowUser `json:"user"`
+	Type      string                                `json:"type"`
+	Title     *string                               `json:"title"`
+	Amount    *float64                              `json:"amount"`
+	Date      string                                `json:"date"`
+	CreatedAt string                                `json:"created_at"`
+}
+
+// PayrollSingleAdjustmentsCreateRowUser is part of what POST /company/v3/payroll/single-adjustments answers.
+type PayrollSingleAdjustmentsCreateRowUser struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+}
+
+// PayrollSingleAdjustmentsDeleteResponse is part of what DELETE /company/v3/payroll/single-adjustments/{id} answers.
+type PayrollSingleAdjustmentsDeleteResponse struct {
+	Data DeleteOutcome `json:"data"`
+}
+
+// PayrollSingleAdjustmentsListParams is the query of GET /company/v3/payroll/single-adjustments.
+type PayrollSingleAdjustmentsListParams struct {
+	// How many rows one page holds. Defaults to 50.
+	PerPage Opt[int64] `json:"per_page,omitzero"`
+
+	// The `meta.next_cursor` of the previous page. Omit it for the first. A cursor is bound to the
+	// filters it was issued under — change them and start again.
+	Cursor Opt[string] `json:"cursor,omitzero"`
+
+	// Only rows belonging to these people, by id.
+	Users []int64 `json:"users,omitzero"`
+
+	// Only rows of these types.
+	// One of "service_charge", "single_addition_pre_tax", "single_addition_post_tax", "single_loan",
+	// "single_deduction_pre_tax", "single_deduction_post_tax".
+	Types []string `json:"types,omitzero"`
+
+	// Start of the window, inclusive (YYYY-MM-DD).
+	DateFrom Opt[string] `json:"date_from,omitzero"`
+
+	// End of the window, inclusive (YYYY-MM-DD).
+	DateTo Opt[string] `json:"date_to,omitzero"`
+}
+
+// PayrollSingleAdjustmentsListResponse is part of what GET /company/v3/payroll/single-adjustments answers.
+type PayrollSingleAdjustmentsListResponse struct {
+	Data  []PayrollSingleAdjustmentsListRow `json:"data"`
+	Links PageLinks                         `json:"links"`
+	Meta  PageMeta                          `json:"meta"`
+}
+
+// PayrollSingleAdjustmentsListRow is part of what GET /company/v3/payroll/single-adjustments answers.
+type PayrollSingleAdjustmentsListRow struct {
+	ID        int64                               `json:"id"`
+	User      PayrollSingleAdjustmentsListRowUser `json:"user"`
+	Type      string                              `json:"type"`
+	Title     *string                             `json:"title"`
+	Amount    *float64                            `json:"amount"`
+	Date      string                              `json:"date"`
+	CreatedAt string                              `json:"created_at"`
+}
+
+// PayrollSingleAdjustmentsListRowUser is part of what GET /company/v3/payroll/single-adjustments answers.
+type PayrollSingleAdjustmentsListRowUser struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+}
+
 // PositionsDeleteResponse is part of what DELETE /company/v3/positions/{id} answers.
 type PositionsDeleteResponse struct {
 	Data DeleteOutcome `json:"data"`
