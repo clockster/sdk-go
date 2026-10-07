@@ -149,7 +149,10 @@ func DocumentsPartyValues() []string {
 // "data_processing_agreement", "act_of_service_acceptance", "health_and_safety_briefing",
 // "shift_schedule", "letter", "vacation_schedule", "contract", "agreement", "goods_release_note",
 // "reconciliation_act", "return_to_supplier", "driver_license", "birth_certificate",
-// "marriage_certificate", "divorce_certificate", "change_fio_certificate".
+// "marriage_certificate", "divorce_certificate", "change_fio_certificate", "srts", "vaccination",
+// "social_id", "disability_certificate", "large_family_certificate", "asp_certificate",
+// "tech_passport", "pension", "rk_passport", "student_card", "vnzh", "pcr_certificate",
+// "lbg_card", "insurance_policy", "hunter", "oralman", "attorney".
 const (
 	DocumentsTypePassport                         = "passport"
 	DocumentsTypeCv                               = "cv"
@@ -183,6 +186,23 @@ const (
 	DocumentsTypeMarriageCertificate              = "marriage_certificate"
 	DocumentsTypeDivorceCertificate               = "divorce_certificate"
 	DocumentsTypeChangeFioCertificate             = "change_fio_certificate"
+	DocumentsTypeSrts                             = "srts"
+	DocumentsTypeVaccination                      = "vaccination"
+	DocumentsTypeSocialID                         = "social_id"
+	DocumentsTypeDisabilityCertificate            = "disability_certificate"
+	DocumentsTypeLargeFamilyCertificate           = "large_family_certificate"
+	DocumentsTypeAspCertificate                   = "asp_certificate"
+	DocumentsTypeTechPassport                     = "tech_passport"
+	DocumentsTypePension                          = "pension"
+	DocumentsTypeRkPassport                       = "rk_passport"
+	DocumentsTypeStudentCard                      = "student_card"
+	DocumentsTypeVnzh                             = "vnzh"
+	DocumentsTypePcrCertificate                   = "pcr_certificate"
+	DocumentsTypeLbgCard                          = "lbg_card"
+	DocumentsTypeInsurancePolicy                  = "insurance_policy"
+	DocumentsTypeHunter                           = "hunter"
+	DocumentsTypeOralman                          = "oralman"
+	DocumentsTypeAttorney                         = "attorney"
 )
 
 // DocumentsTypeValues is every value of DocumentsType, in the order the document names them.
@@ -220,6 +240,23 @@ func DocumentsTypeValues() []string {
 		DocumentsTypeMarriageCertificate,
 		DocumentsTypeDivorceCertificate,
 		DocumentsTypeChangeFioCertificate,
+		DocumentsTypeSrts,
+		DocumentsTypeVaccination,
+		DocumentsTypeSocialID,
+		DocumentsTypeDisabilityCertificate,
+		DocumentsTypeLargeFamilyCertificate,
+		DocumentsTypeAspCertificate,
+		DocumentsTypeTechPassport,
+		DocumentsTypePension,
+		DocumentsTypeRkPassport,
+		DocumentsTypeStudentCard,
+		DocumentsTypeVnzh,
+		DocumentsTypePcrCertificate,
+		DocumentsTypeLbgCard,
+		DocumentsTypeInsurancePolicy,
+		DocumentsTypeHunter,
+		DocumentsTypeOralman,
+		DocumentsTypeAttorney,
 	}
 }
 
