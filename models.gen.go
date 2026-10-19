@@ -825,10 +825,10 @@ type PayrollSingleAdjustmentsCreateAdjustment struct {
 	// The employee this belongs to, by the id this API issued.
 	UserID int64 `json:"user_id"`
 
-	// What the amount does: an addition or a deduction, before or after tax, a service charge or a
-	// one-off loan.
+	// What the amount does: an addition or a deduction, before or after tax, a service charge, a
+	// one-off loan, or a withholding from the take-home pay that leaves the company's cost as it is.
 	// One of "service_charge", "single_addition_pre_tax", "single_addition_post_tax", "single_loan",
-	// "single_deduction_pre_tax", "single_deduction_post_tax".
+	// "single_deduction_pre_tax", "single_deduction_post_tax", "withholding".
 	Type string `json:"type"`
 
 	// How much, never negative — `type` says which way it goes. At most two decimal places.
@@ -882,7 +882,7 @@ type PayrollSingleAdjustmentsListParams struct {
 
 	// Only rows of these types.
 	// One of "service_charge", "single_addition_pre_tax", "single_addition_post_tax", "single_loan",
-	// "single_deduction_pre_tax", "single_deduction_post_tax".
+	// "single_deduction_pre_tax", "single_deduction_post_tax", "withholding".
 	Types []string `json:"types,omitzero"`
 
 	// Start of the window, inclusive (YYYY-MM-DD).

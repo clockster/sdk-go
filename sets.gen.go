@@ -291,7 +291,7 @@ func PayrollPayslipsStatusValues() []string {
 
 // PayrollSingleAdjustmentsType is what this field is allowed to be. One of "service_charge",
 // "single_addition_pre_tax", "single_addition_post_tax", "single_loan",
-// "single_deduction_pre_tax", "single_deduction_post_tax".
+// "single_deduction_pre_tax", "single_deduction_post_tax", "withholding".
 const (
 	PayrollSingleAdjustmentsTypeServiceCharge          = "service_charge"
 	PayrollSingleAdjustmentsTypeSingleAdditionPreTax   = "single_addition_pre_tax"
@@ -299,6 +299,7 @@ const (
 	PayrollSingleAdjustmentsTypeSingleLoan             = "single_loan"
 	PayrollSingleAdjustmentsTypeSingleDeductionPreTax  = "single_deduction_pre_tax"
 	PayrollSingleAdjustmentsTypeSingleDeductionPostTax = "single_deduction_post_tax"
+	PayrollSingleAdjustmentsTypeWithholding            = "withholding"
 )
 
 // PayrollSingleAdjustmentsTypeValues is every value of PayrollSingleAdjustmentsType, in the order
@@ -311,6 +312,7 @@ func PayrollSingleAdjustmentsTypeValues() []string {
 		PayrollSingleAdjustmentsTypeSingleLoan,
 		PayrollSingleAdjustmentsTypeSingleDeductionPreTax,
 		PayrollSingleAdjustmentsTypeSingleDeductionPostTax,
+		PayrollSingleAdjustmentsTypeWithholding,
 	}
 }
 
