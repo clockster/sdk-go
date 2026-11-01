@@ -65,6 +65,108 @@ func AttendanceStatusValues() []string {
 	}
 }
 
+// ChecklistsInclude is what this field is allowed to be. One of "items", "managers", "users",
+// "issues", "comments", "attachments", "author".
+const (
+	ChecklistsIncludeItems       = "items"
+	ChecklistsIncludeManagers    = "managers"
+	ChecklistsIncludeUsers       = "users"
+	ChecklistsIncludeIssues      = "issues"
+	ChecklistsIncludeComments    = "comments"
+	ChecklistsIncludeAttachments = "attachments"
+	ChecklistsIncludeAuthor      = "author"
+)
+
+// ChecklistsIncludeValues is every value of ChecklistsInclude, in the order the document names
+// them.
+func ChecklistsIncludeValues() []string {
+	return []string{
+		ChecklistsIncludeItems,
+		ChecklistsIncludeManagers,
+		ChecklistsIncludeUsers,
+		ChecklistsIncludeIssues,
+		ChecklistsIncludeComments,
+		ChecklistsIncludeAttachments,
+		ChecklistsIncludeAuthor,
+	}
+}
+
+// ChecklistsItemType is what this field is allowed to be. One of "checkbox", "boolean", "option",
+// "number", "comment".
+const (
+	ChecklistsItemTypeCheckbox = "checkbox"
+	ChecklistsItemTypeBoolean  = "boolean"
+	ChecklistsItemTypeOption   = "option"
+	ChecklistsItemTypeNumber   = "number"
+	ChecklistsItemTypeComment  = "comment"
+)
+
+// ChecklistsItemTypeValues is every value of ChecklistsItemType, in the order the document names
+// them.
+func ChecklistsItemTypeValues() []string {
+	return []string{
+		ChecklistsItemTypeCheckbox,
+		ChecklistsItemTypeBoolean,
+		ChecklistsItemTypeOption,
+		ChecklistsItemTypeNumber,
+		ChecklistsItemTypeComment,
+	}
+}
+
+// ChecklistsPriority is what this field is allowed to be. One of "low", "normal", "high".
+const (
+	ChecklistsPriorityLow    = "low"
+	ChecklistsPriorityNormal = "normal"
+	ChecklistsPriorityHigh   = "high"
+)
+
+// ChecklistsPriorityValues is every value of ChecklistsPriority, in the order the document names
+// them.
+func ChecklistsPriorityValues() []string {
+	return []string{
+		ChecklistsPriorityLow,
+		ChecklistsPriorityNormal,
+		ChecklistsPriorityHigh,
+	}
+}
+
+// ChecklistsStatus is what this field is allowed to be. One of "created", "started", "completed",
+// "incompleted", "pastdue", "pending".
+const (
+	ChecklistsStatusCreated     = "created"
+	ChecklistsStatusStarted     = "started"
+	ChecklistsStatusCompleted   = "completed"
+	ChecklistsStatusIncompleted = "incompleted"
+	ChecklistsStatusPastdue     = "pastdue"
+	ChecklistsStatusPending     = "pending"
+)
+
+// ChecklistsStatusValues is every value of ChecklistsStatus, in the order the document names them.
+func ChecklistsStatusValues() []string {
+	return []string{
+		ChecklistsStatusCreated,
+		ChecklistsStatusStarted,
+		ChecklistsStatusCompleted,
+		ChecklistsStatusIncompleted,
+		ChecklistsStatusPastdue,
+		ChecklistsStatusPending,
+	}
+}
+
+// ChecklistsType is what this field is allowed to be. One of "default", "audit".
+const (
+	ChecklistsTypeDefault = "default"
+	ChecklistsTypeAudit   = "audit"
+)
+
+// ChecklistsTypeValues is every value of ChecklistsType, in the order the document names them.
+func ChecklistsTypeValues() []string {
+	return []string{
+		ChecklistsTypeDefault,
+		ChecklistsTypeAudit,
+	}
+}
+
 // DepartmentsInclude is what this field is allowed to be. One of "managers".
 const (
 	DepartmentsIncludeManagers = "managers"

@@ -26,6 +26,9 @@ type Client struct {
 	// Attendance is `clockster.Attendance`.
 	Attendance *Attendance
 
+	// Checklists is `clockster.Checklists`.
+	Checklists *Checklists
+
 	// Departments is `clockster.Departments`.
 	Departments *Departments
 
@@ -70,6 +73,7 @@ func newClient(t *transport) *Client {
 	return &Client{
 		transport:    t,
 		Attendance:   newAttendance(t),
+		Checklists:   newChecklists(t),
 		Departments:  newDepartments(t),
 		Documents:    newDocuments(t),
 		Files:        newFiles(t),
@@ -93,6 +97,17 @@ type Attendance struct {
 
 func newAttendance(t *transport) *Attendance {
 	return &Attendance{
+		transport: t,
+	}
+}
+
+// Checklists holds the operations of `clockster.Checklists`.
+type Checklists struct {
+	*transport
+}
+
+func newChecklists(t *transport) *Checklists {
+	return &Checklists{
 		transport: t,
 	}
 }
@@ -463,6 +478,220 @@ func (n *Attendance) Record(ctx context.Context, body *AttendanceRecordBody, opt
 	}
 
 	return &out, nil
+}
+
+// Create is POST /company/v3/checklists.
+//
+// Create checklists.
+//
+// Up to 100 checklists in one call, each created once under your `external_id`, which is
+// required here.
+//
+// **One checklist is one row shared by everyone it is aimed at**, as the web app creates
+// it, and whoever fills it in answers for all of them. A result per location needs a
+// checklist per location.
+//
+// **Somebody has to be able to fill it in**: its author, its `users`, or anyone at its
+// `locations`, `departments` or `positions`. A new row that names none of them is a `422`.
+//
+// **Only today's checklists.** A new key's `date_start` is today in its `timezone`. The
+// lists in the product file a checklist by the UTC date it was created on, so send a day's
+// checklists while that date is also the date in UTC, or they show under another day.
+//
+// **The "new checklist" push** goes out at `time_notify`, else at `time_start`, today — at
+// once when neither is set, and not at all once that time has passed. It reaches the people
+// in a named audience, plus `users` and `author_id`.
+//
+// **Create only, so `exists` means nothing was applied.** A key already on file answers
+// `exists` with its id, whatever the row sent now says, so a resend after a timeout is
+// safe. A checklist nobody has touched yet is changed by deleting it and creating it again;
+// a missed one is rescheduled under a new `external_id`.
+//
+// A new key's ids are checked against your company, and the flags left out stay off. The
+// answer lists every row, in the order sent, as `created` or `exists`.
+func (n *Checklists) Create(ctx context.Context, body *ChecklistsCreateBody, opts ...RequestOption) (*ChecklistsCreateResponse, error) {
+	if body == nil {
+		return nil, errNoBody
+	}
+
+	var out ChecklistsCreateResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodPost,
+		path:   "/company/v3/checklists",
+		body:   body,
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// Delete is DELETE /company/v3/checklists/{id}.
+//
+// Delete a checklist.
+//
+// Deletes a checklist nobody has touched, and its discussion.
+//
+// **Refused once anybody has worked on it** — 409, `checklist_locked`: it was started or
+// is past due, an item was answered, it or one of its items carries a file (the author's
+// reference files included), or it has an issue or a comment. One with `is_keep_status`
+// never turns past due, so it stays deletable after its dates until somebody works on it.
+// The refusal is final; reschedule under a new `external_id` instead. A checklist the web
+// app or a template issued with files therefore cannot be deleted here.
+//
+// A `404` on a repeated delete means it is gone. The id comes from the create answer or
+// from `GET /company/v3/checklists?external_ids=`. A deletion is not visible to polling
+// with `updated_since`.
+func (n *Checklists) Delete(ctx context.Context, id int64, opts ...RequestOption) (*ChecklistsDeleteResponse, error) {
+	var out ChecklistsDeleteResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodDelete,
+		path:   fmt.Sprintf("/company/v3/checklists/%d", id),
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// Get is GET /company/v3/checklists/{id}.
+//
+// Read one checklist.
+//
+// The same keys the listing answers with, and the same `include` vocabulary. Another company's id
+// is a `404`.
+func (n *Checklists) Get(ctx context.Context, id int64, params *ChecklistsGetParams, opts ...RequestOption) (*ChecklistsGetResponse, error) {
+	query := url.Values{}
+
+	if params != nil {
+		queryList(query, "include", params.Include)
+	}
+
+	var out ChecklistsGetResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodGet,
+		path:   fmt.Sprintf("/company/v3/checklists/%d", id),
+		query:  query,
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// List is GET /company/v3/checklists.
+//
+// List checklists.
+//
+// Checklists as we hold them, oldest first, paged on a cursor: what was issued, how far it
+// got, and what was answered.
+//
+// **One checklist is one row shared by everyone it is aimed at.** Whoever fills it in
+// answers for all of them: its author, its `users`, or anyone at its `locations`,
+// `departments` or `positions`. `user_filters` narrows who sees it but lets nobody fill it
+// in. A result per location needs a checklist per location.
+//
+// `include=items` adds the questions with their answers. **An item's `value` follows its
+// `type`**: `checkbox` and `boolean` answer a boolean, `option` one of `bad`, `normal` or
+// `good`, `number` an integer, `comment` a string. It is null until somebody answers.
+//
+// `score_percent` is what the answered items scored, weighted by their `score`. A
+// handed-in checklist below `min_score`, or with any item left unticked, is `incompleted`;
+// an open required item refuses the hand-in. With `req_approve` it goes to `pending`, and
+// the same rule settles it once approved.
+//
+// `locations` matches a checklist aimed at one of those locations; one aimed at every
+// location (empty `locations`) is not matched. `start_from` and `start_to` are on
+// `date_start`, and a checklist without one is not matched.
+//
+// **`updated_since` sees the work**: an answer, a file added to or removed from the
+// checklist or one of its items, an approver's decision and an issue resolved from its task
+// all move `updated_at`. A comment does not, and neither does a template or a person
+// deleted for good, which empties `template_id`, `author_id` or an item's `user`, or drops
+// the person from `managers` and `users`. A deleted checklist is simply no longer listed,
+// so polling cannot see a deletion.
+func (n *Checklists) List(ctx context.Context, params *ChecklistsListParams, opts ...RequestOption) (*ChecklistsListResponse, error) {
+	query := url.Values{}
+
+	if params != nil {
+		queryOpt(query, "per_page", params.PerPage)
+		queryOpt(query, "cursor", params.Cursor)
+		queryList(query, "external_ids", params.ExternalIDs)
+		queryList(query, "statuses", params.Statuses)
+		queryList(query, "types", params.Types)
+		queryList(query, "templates", params.Templates)
+		queryList(query, "locations", params.Locations)
+		queryOpt(query, "start_from", params.StartFrom)
+		queryOpt(query, "start_to", params.StartTo)
+		queryOpt(query, "updated_since", params.UpdatedSince)
+		queryOpt(query, "search", params.Search)
+		queryList(query, "include", params.Include)
+	}
+
+	var out ChecklistsListResponse
+
+	if err := n.do(ctx, request{
+		method: http.MethodGet,
+		path:   "/company/v3/checklists",
+		query:  query,
+	}, &out, opts); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
+}
+
+// ListAll walks every page of List and answers a row at a time.
+//
+//	for row, err := range clockster.Checklists.ListAll(ctx, params) {
+//		if err != nil {
+//			return err
+//		}
+//	}
+//
+// A refused page is answered where it was refused, so half a listing is never mistaken for the
+// whole of one. A cursor belongs to the filters it was issued under: change them and walk again.
+func (n *Checklists) ListAll(ctx context.Context, params *ChecklistsListParams, opts ...RequestOption) iter.Seq2[ChecklistsListRow, error] {
+	return func(yield func(ChecklistsListRow, error) bool) {
+		walked := ChecklistsListParams{}
+
+		if params != nil {
+			walked = *params
+		}
+
+		seen := map[string]bool{}
+
+		for {
+			page, err := n.List(ctx, &walked, opts...)
+			if err != nil {
+				var none ChecklistsListRow
+
+				yield(none, err)
+
+				return
+			}
+
+			for _, row := range page.Data {
+				if !yield(row, nil) {
+					return
+				}
+			}
+
+			cursor := page.Meta.NextCursor
+
+			// A cursor that repeats would page until the process is killed, which is worse than
+			// stopping.
+			if cursor == nil || *cursor == "" || seen[*cursor] {
+				return
+			}
+
+			seen[*cursor] = true
+			walked.Cursor = Set(*cursor)
+		}
+	}
 }
 
 // Delete is DELETE /company/v3/departments/{id}.

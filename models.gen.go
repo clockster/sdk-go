@@ -172,14 +172,536 @@ type AttendanceRecordRow struct {
 	Result   string `json:"result"`
 }
 
-// DepartmentsDeleteResponse is part of what DELETE /company/v3/departments/{id} answers.
-type DepartmentsDeleteResponse struct {
+// ChecklistsCreateBody is part of what POST /company/v3/checklists takes.
+type ChecklistsCreateBody struct {
+	// The checklists to create, up to 100 a call and 2,000 items across them.
+	Checklists []ChecklistsCreateChecklist `json:"checklists"`
+}
+
+// ChecklistsCreateChecklist is part of what POST /company/v3/checklists takes.
+type ChecklistsCreateChecklist struct {
+	// Your own key for this checklist. A key already on file answers `exists` and nothing is applied.
+	ExternalID string `json:"external_id"`
+
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// Free text about this row, for people rather than for your code.
+	Description Opt[string] `json:"description,omitzero"`
+
+	// On a checklist, `default` or `audit`. On an item, the answer it takes: `checkbox` or `boolean`
+	// a boolean, `option` one of `bad`, `normal` or `good`, `number` an integer, `comment` free text.
+	// One of "default", "audit".
+	Type string `json:"type"`
+
+	// One of "low", "normal", "high".
+	Priority string `json:"priority"`
+
+	// The UTC offset the clock times beside it are read in — `Z`, or `+05:00`. An offset rather than
+	// a zone name, so the day is fixed to a moment rather than to a rule that may be changed later.
+	Timezone string `json:"timezone"`
+
+	// The day it opens, `YYYY-MM-DD`: today in `timezone` for a new key.
+	DateStart string `json:"date_start"`
+
+	// The last day it may be filled in, `YYYY-MM-DD`: on or after `date_start`, at most 30 days past
+	// it.
+	DateEnd string `json:"date_end"`
+
+	// When in the day it starts, as a clock time `HH:MM:SS`.
+	TimeStart Opt[string] `json:"time_start,omitzero"`
+
+	// When in the day it ends, as a clock time `HH:MM:SS`.
+	TimeEnd Opt[string] `json:"time_end,omitzero"`
+
+	// When today the "new checklist" push goes out, `HH:MM:SS` in `timezone`.
+	TimeNotify Opt[string] `json:"time_notify,omitzero"`
+	ReqApprove Opt[bool]   `json:"req_approve,omitzero"`
+	ReqNotify  Opt[bool]   `json:"req_notify,omitzero"`
+	Geofence   Opt[bool]   `json:"geofence,omitzero"`
+	Gallery    Opt[bool]   `json:"gallery,omitzero"`
+
+	// Keeps the status when the time runs out: an untouched checklist stays `created` rather than
+	// turning `pastdue`, and a started one stays `started` rather than being handed in by itself.
+	IsKeepStatus Opt[bool] `json:"is_keep_status,omitzero"`
+
+	// The pass mark for `score_percent`. A handed-in checklist below `min_score`, or with any item
+	// left unticked, is `incompleted`; an open required item refuses the hand-in. With `req_approve`
+	// it goes to `pending`, and the same rule settles it once approved.
+	MinScore Opt[int64] `json:"min_score,omitzero"`
+
+	// Who it is filed under, by id; the author can fill it in too. Without it the checklist has no
+	// author, and the checklists report names the calling key instead.
+	AuthorID Opt[int64] `json:"author_id,omitzero"`
+
+	// Aimed at people at these locations, by id. Left out or empty: every location. Your company's
+	// own locations only: one shared from a parent company, which `GET /company/v3/locations` also
+	// lists, is a `422`.
+	Locations []int64 `json:"locations,omitzero"`
+
+	// Aimed at people in these departments, by id. Left out or empty: every department.
+	Departments []int64 `json:"departments,omitzero"`
+
+	// Aimed at people in these positions, by id. Left out or empty: every position.
+	Positions []int64 `json:"positions,omitzero"`
+
+	// Aimed at people in these user filters, by id. Left out or empty: every user filter. It narrows
+	// who sees the checklist but lets nobody fill it in.
+	UserFilters []int64 `json:"user_filters,omitzero"`
+
+	// People the checklist is assigned to by name, by id, on top of the audience.
+	Users []int64 `json:"users,omitzero"`
+
+	// Who approves or is notified, by id. Required with `req_approve` or `req_notify`.
+	Managers []int64 `json:"managers,omitzero"`
+
+	// The questions, in the order given.
+	Items []ChecklistsCreateChecklistItem `json:"items"`
+}
+
+// ChecklistsCreateChecklistItem is part of what POST /company/v3/checklists takes.
+type ChecklistsCreateChecklistItem struct {
+	// The heading the item sits under. Items naming the same section share it; an item without one
+	// sits under an unnamed one.
+	Section Opt[string] `json:"section,omitzero"`
+
+	// The name this is shown under.
+	Title string `json:"title"`
+
+	// On a checklist, `default` or `audit`. On an item, the answer it takes: `checkbox` or `boolean`
+	// a boolean, `option` one of `bad`, `normal` or `good`, `number` an integer, `comment` free text.
+	// One of "checkbox", "boolean", "option", "number", "comment".
+	Type       string `json:"type"`
+	IsRequired bool   `json:"is_required"`
+	Photos     int64  `json:"photos"`
+	Geofence   bool   `json:"geofence"`
+
+	// When in the day it starts, as a clock time `HH:MM:SS`.
+	TimeStart Opt[string] `json:"time_start,omitzero"`
+
+	// When in the day it ends, as a clock time `HH:MM:SS`.
+	TimeEnd Opt[string] `json:"time_end,omitzero"`
+
+	// What the item weighs in `score_percent`.
+	Score     Opt[int64] `json:"score,omitzero"`
+	MinNumber Opt[int64] `json:"min_number,omitzero"`
+	MaxNumber Opt[int64] `json:"max_number,omitzero"`
+}
+
+// ChecklistsCreateResponse is part of what POST /company/v3/checklists answers.
+type ChecklistsCreateResponse struct {
+	Data []UpsertOutcome `json:"data"`
+}
+
+type UpsertOutcome struct {
+	ExternalID *string `json:"external_id"`
+	ID         int64   `json:"id"`
+	Result     string  `json:"result"`
+}
+
+// ChecklistsDeleteResponse is part of what DELETE /company/v3/checklists/{id} answers.
+type ChecklistsDeleteResponse struct {
 	Data DeleteOutcome `json:"data"`
 }
 
 type DeleteOutcome struct {
 	ID     int64  `json:"id"`
 	Result string `json:"result"`
+}
+
+// ChecklistsGetParams is the query of GET /company/v3/checklists/{id}.
+type ChecklistsGetParams struct {
+	// Relations to load, comma-separated. Anything not named is absent from the answer rather than
+	// null.
+	// One of "items", "managers", "users", "issues", "comments", "attachments", "author".
+	Include []string `json:"include,omitzero"`
+}
+
+// ChecklistsGetResponse is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetResponse struct {
+	Data ChecklistsGetData `json:"data"`
+}
+
+// ChecklistsGetData is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetData struct {
+	ID           int64                         `json:"id"`
+	ExternalID   *string                       `json:"external_id"`
+	Title        string                        `json:"title"`
+	Description  *string                       `json:"description"`
+	Type         string                        `json:"type"`
+	Status       string                        `json:"status"`
+	Priority     string                        `json:"priority"`
+	MinScore     *int64                        `json:"min_score"`
+	ScorePercent int64                         `json:"score_percent"`
+	TemplateID   *int64                        `json:"template_id"`
+	AuthorID     *int64                        `json:"author_id"`
+	Locations    []int64                       `json:"locations"`
+	Departments  []int64                       `json:"departments"`
+	Positions    []int64                       `json:"positions"`
+	UserFilters  []int64                       `json:"user_filters"`
+	DateStart    *string                       `json:"date_start"`
+	DateEnd      *string                       `json:"date_end"`
+	TimeStart    *string                       `json:"time_start"`
+	TimeEnd      *string                       `json:"time_end"`
+	Timezone     *string                       `json:"timezone"`
+	TimeNotify   *string                       `json:"time_notify"`
+	ReqApprove   bool                          `json:"req_approve"`
+	ReqNotify    bool                          `json:"req_notify"`
+	Geofence     bool                          `json:"geofence"`
+	Gallery      bool                          `json:"gallery"`
+	IsKeepStatus bool                          `json:"is_keep_status"`
+	TimeWorked   int64                         `json:"time_worked"`
+	StartedAt    *string                       `json:"started_at"`
+	CompletedAt  *string                       `json:"completed_at"`
+	CreatedAt    string                        `json:"created_at"`
+	UpdatedAt    string                        `json:"updated_at"`
+	Items        []ChecklistsGetDataItem       `json:"items"`
+	Managers     []ChecklistsGetDataManager    `json:"managers"`
+	Users        []EmployeeShort               `json:"users"`
+	Issues       []ChecklistsGetDataIssue      `json:"issues"`
+	Comments     []ChecklistsGetDataComment    `json:"comments"`
+	Attachments  []ChecklistsGetDataAttachment `json:"attachments"`
+	Author       *ChecklistsGetDataAuthor      `json:"author"`
+}
+
+// ChecklistsGetDataItem is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataItem struct {
+	ID         int64   `json:"id"`
+	Section    *string `json:"section"`
+	Title      string  `json:"title"`
+	Type       string  `json:"type"`
+	IsRequired bool    `json:"is_required"`
+	Photos     int64   `json:"photos"`
+	Geofence   bool    `json:"geofence"`
+	TimeStart  *string `json:"time_start"`
+	TimeEnd    *string `json:"time_end"`
+	MinNumber  *int64  `json:"min_number"`
+	MaxNumber  *int64  `json:"max_number"`
+
+	// One of boolean, integer, string.
+	Value       any                               `json:"value"`
+	Note        *string                           `json:"note"`
+	Score       int64                             `json:"score"`
+	IsCompleted bool                              `json:"is_completed"`
+	CompletedAt *string                           `json:"completed_at"`
+	User        *ChecklistsGetDataItemUser        `json:"user"`
+	Latitude    *float64                          `json:"latitude"`
+	Longitude   *float64                          `json:"longitude"`
+	HasIssue    bool                              `json:"has_issue"`
+	Issue       *string                           `json:"issue"`
+	Attachments []ChecklistsGetDataItemAttachment `json:"attachments"`
+}
+
+// ChecklistsGetDataItemUser is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataItemUser struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+}
+
+// ChecklistsGetDataItemAttachment is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataItemAttachment struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Format      string  `json:"format"`
+	URL         string  `json:"url"`
+	CreatedAt   string  `json:"created_at"`
+}
+
+// ChecklistsGetDataManager is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataManager struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+	Status     string  `json:"status"`
+	UpdatedAt  string  `json:"updated_at"`
+}
+
+// ChecklistsGetDataIssue is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataIssue struct {
+	ID           int64   `json:"id"`
+	ItemID       int64   `json:"item_id"`
+	Stage        string  `json:"stage"`
+	Severity     string  `json:"severity"`
+	Description  *string `json:"description"`
+	ReporterID   *int64  `json:"reporter_id"`
+	AssigneeID   *int64  `json:"assignee_id"`
+	DueDate      *string `json:"due_date"`
+	ResolvedNote *string `json:"resolved_note"`
+	ResolvedAt   *string `json:"resolved_at"`
+	ResolvedBy   *int64  `json:"resolved_by"`
+	VerifiedAt   *string `json:"verified_at"`
+	VerifiedBy   *int64  `json:"verified_by"`
+	CreatedAt    string  `json:"created_at"`
+}
+
+// ChecklistsGetDataComment is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataComment struct {
+	ID        int64                         `json:"id"`
+	ParentID  *int64                        `json:"parent_id"`
+	User      *ChecklistsGetDataCommentUser `json:"user"`
+	Text      string                        `json:"text"`
+	CreatedAt string                        `json:"created_at"`
+}
+
+// ChecklistsGetDataCommentUser is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataCommentUser struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+}
+
+// ChecklistsGetDataAttachment is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataAttachment struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Format      string  `json:"format"`
+	URL         string  `json:"url"`
+	CreatedAt   string  `json:"created_at"`
+}
+
+// ChecklistsGetDataAuthor is part of what GET /company/v3/checklists/{id} answers.
+type ChecklistsGetDataAuthor struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+}
+
+// ChecklistsListParams is the query of GET /company/v3/checklists.
+type ChecklistsListParams struct {
+	// How many rows one page holds. Defaults to 50.
+	PerPage Opt[int64] `json:"per_page,omitzero"`
+
+	// The `meta.next_cursor` of the previous page. Omit it for the first. A cursor is bound to the
+	// filters it was issued under — change them and start again.
+	Cursor Opt[string] `json:"cursor,omitzero"`
+
+	// Only rows carrying these keys of yours: write with your key, read back with it.
+	ExternalIDs []string `json:"external_ids,omitzero"`
+
+	// Only rows in these states.
+	// One of "created", "started", "completed", "incompleted", "pastdue", "pending".
+	Statuses []string `json:"statuses,omitzero"`
+
+	// Only rows of these types.
+	// One of "default", "audit".
+	Types []string `json:"types,omitzero"`
+
+	// Only rows issued from these templates, by id.
+	Templates []int64 `json:"templates,omitzero"`
+
+	// Only checklists aimed at one of these locations, by id. Your company's own locations only: one
+	// shared from a parent company, which `GET /company/v3/locations` also lists, is a `422`.
+	Locations []int64 `json:"locations,omitzero"`
+
+	// Starting on or after this date (YYYY-MM-DD).
+	StartFrom Opt[string] `json:"start_from,omitzero"`
+
+	// Starting on or before this date (YYYY-MM-DD).
+	StartTo Opt[string] `json:"start_to,omitzero"`
+
+	// Only rows changed at or after this instant (ISO 8601). The cheap way to sync: ask for what
+	// moved, not for everything.
+	UpdatedSince Opt[string] `json:"updated_since,omitzero"`
+
+	// Free text over the title.
+	Search Opt[string] `json:"search,omitzero"`
+
+	// Relations to load, comma-separated. Anything not named is absent from the answer rather than
+	// null.
+	// One of "items", "managers", "users", "issues", "comments", "attachments", "author".
+	Include []string `json:"include,omitzero"`
+}
+
+// ChecklistsListResponse is part of what GET /company/v3/checklists answers.
+type ChecklistsListResponse struct {
+	Data []ChecklistsListRow `json:"data"`
+	Meta ChecklistsListMeta  `json:"meta"`
+}
+
+// ChecklistsListRow is part of what GET /company/v3/checklists answers.
+type ChecklistsListRow struct {
+	ID           int64                         `json:"id"`
+	ExternalID   *string                       `json:"external_id"`
+	Title        string                        `json:"title"`
+	Description  *string                       `json:"description"`
+	Type         string                        `json:"type"`
+	Status       string                        `json:"status"`
+	Priority     string                        `json:"priority"`
+	MinScore     *int64                        `json:"min_score"`
+	ScorePercent int64                         `json:"score_percent"`
+	TemplateID   *int64                        `json:"template_id"`
+	AuthorID     *int64                        `json:"author_id"`
+	Locations    []int64                       `json:"locations"`
+	Departments  []int64                       `json:"departments"`
+	Positions    []int64                       `json:"positions"`
+	UserFilters  []int64                       `json:"user_filters"`
+	DateStart    *string                       `json:"date_start"`
+	DateEnd      *string                       `json:"date_end"`
+	TimeStart    *string                       `json:"time_start"`
+	TimeEnd      *string                       `json:"time_end"`
+	Timezone     *string                       `json:"timezone"`
+	TimeNotify   *string                       `json:"time_notify"`
+	ReqApprove   bool                          `json:"req_approve"`
+	ReqNotify    bool                          `json:"req_notify"`
+	Geofence     bool                          `json:"geofence"`
+	Gallery      bool                          `json:"gallery"`
+	IsKeepStatus bool                          `json:"is_keep_status"`
+	TimeWorked   int64                         `json:"time_worked"`
+	StartedAt    *string                       `json:"started_at"`
+	CompletedAt  *string                       `json:"completed_at"`
+	CreatedAt    string                        `json:"created_at"`
+	UpdatedAt    string                        `json:"updated_at"`
+	Items        []ChecklistsListRowItem       `json:"items"`
+	Managers     []ChecklistsListRowManager    `json:"managers"`
+	Users        []EmployeeShort               `json:"users"`
+	Issues       []ChecklistsListRowIssue      `json:"issues"`
+	Comments     []ChecklistsListRowComment    `json:"comments"`
+	Attachments  []ChecklistsListRowAttachment `json:"attachments"`
+	Author       *ChecklistsListRowAuthor      `json:"author"`
+}
+
+// ChecklistsListRowItem is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowItem struct {
+	ID         int64   `json:"id"`
+	Section    *string `json:"section"`
+	Title      string  `json:"title"`
+	Type       string  `json:"type"`
+	IsRequired bool    `json:"is_required"`
+	Photos     int64   `json:"photos"`
+	Geofence   bool    `json:"geofence"`
+	TimeStart  *string `json:"time_start"`
+	TimeEnd    *string `json:"time_end"`
+	MinNumber  *int64  `json:"min_number"`
+	MaxNumber  *int64  `json:"max_number"`
+
+	// One of boolean, integer, string.
+	Value       any                               `json:"value"`
+	Note        *string                           `json:"note"`
+	Score       int64                             `json:"score"`
+	IsCompleted bool                              `json:"is_completed"`
+	CompletedAt *string                           `json:"completed_at"`
+	User        *ChecklistsListRowItemUser        `json:"user"`
+	Latitude    *float64                          `json:"latitude"`
+	Longitude   *float64                          `json:"longitude"`
+	HasIssue    bool                              `json:"has_issue"`
+	Issue       *string                           `json:"issue"`
+	Attachments []ChecklistsListRowItemAttachment `json:"attachments"`
+}
+
+// ChecklistsListRowItemUser is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowItemUser struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+}
+
+// ChecklistsListRowItemAttachment is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowItemAttachment struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Format      string  `json:"format"`
+	URL         string  `json:"url"`
+	CreatedAt   string  `json:"created_at"`
+}
+
+// ChecklistsListRowManager is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowManager struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+	Status     string  `json:"status"`
+	UpdatedAt  string  `json:"updated_at"`
+}
+
+// ChecklistsListRowIssue is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowIssue struct {
+	ID           int64   `json:"id"`
+	ItemID       int64   `json:"item_id"`
+	Stage        string  `json:"stage"`
+	Severity     string  `json:"severity"`
+	Description  *string `json:"description"`
+	ReporterID   *int64  `json:"reporter_id"`
+	AssigneeID   *int64  `json:"assignee_id"`
+	DueDate      *string `json:"due_date"`
+	ResolvedNote *string `json:"resolved_note"`
+	ResolvedAt   *string `json:"resolved_at"`
+	ResolvedBy   *int64  `json:"resolved_by"`
+	VerifiedAt   *string `json:"verified_at"`
+	VerifiedBy   *int64  `json:"verified_by"`
+	CreatedAt    string  `json:"created_at"`
+}
+
+// ChecklistsListRowComment is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowComment struct {
+	ID        int64                         `json:"id"`
+	ParentID  *int64                        `json:"parent_id"`
+	User      *ChecklistsListRowCommentUser `json:"user"`
+	Text      string                        `json:"text"`
+	CreatedAt string                        `json:"created_at"`
+}
+
+// ChecklistsListRowCommentUser is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowCommentUser struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+}
+
+// ChecklistsListRowAttachment is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowAttachment struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Format      string  `json:"format"`
+	URL         string  `json:"url"`
+	CreatedAt   string  `json:"created_at"`
+}
+
+// ChecklistsListRowAuthor is part of what GET /company/v3/checklists answers.
+type ChecklistsListRowAuthor struct {
+	ID         int64   `json:"id"`
+	ExternalID *string `json:"external_id"`
+	Code       *string `json:"code"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   string  `json:"last_name"`
+}
+
+// ChecklistsListMeta is part of what GET /company/v3/checklists answers.
+type ChecklistsListMeta struct {
+	PerPage    int64   `json:"per_page"`
+	NextCursor *string `json:"next_cursor"`
+	PrevCursor *string `json:"prev_cursor"`
+}
+
+// DepartmentsDeleteResponse is part of what DELETE /company/v3/departments/{id} answers.
+type DepartmentsDeleteResponse struct {
+	Data DeleteOutcome `json:"data"`
 }
 
 // DepartmentsGetParams is the query of GET /company/v3/departments/{id}.
@@ -269,12 +791,6 @@ type DepartmentsUpsertItem struct {
 // DepartmentsUpsertResponse is part of what POST /company/v3/departments/upsert answers.
 type DepartmentsUpsertResponse struct {
 	Data []UpsertOutcome `json:"data"`
-}
-
-type UpsertOutcome struct {
-	ExternalID *string `json:"external_id"`
-	ID         int64   `json:"id"`
-	Result     string  `json:"result"`
 }
 
 // DocumentsDeleteResponse is part of what DELETE /company/v3/documents/{id} answers.
