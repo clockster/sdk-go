@@ -2818,7 +2818,7 @@ type WebhooksCreateBody struct {
 	// "location.created", "location.updated", "location.deleted", "department.created",
 	// "department.updated", "department.deleted", "position.created", "position.updated",
 	// "position.deleted", "task.created", "task.completed", "task.approved", "task.rejected",
-	// "task.deleted".
+	// "task.reopened", "task.deleted".
 	Events []string `json:"events"`
 
 	// Send deliveries with HTTP basic authentication. Not alongside `auth_token`.
@@ -3013,7 +3013,7 @@ type WebhooksUpdateBody struct {
 	// "location.created", "location.updated", "location.deleted", "department.created",
 	// "department.updated", "department.deleted", "position.created", "position.updated",
 	// "position.deleted", "task.created", "task.completed", "task.approved", "task.rejected",
-	// "task.deleted".
+	// "task.reopened", "task.deleted".
 	Events []string `json:"events"`
 
 	// Send deliveries with HTTP basic authentication. Not alongside `auth_token`.
@@ -3112,7 +3112,7 @@ type WebhooksDeliveriesListParams struct {
 	// "location.created", "location.updated", "location.deleted", "department.created",
 	// "department.updated", "department.deleted", "position.created", "position.updated",
 	// "position.deleted", "task.created", "task.completed", "task.approved", "task.rejected",
-	// "task.deleted".
+	// "task.reopened", "task.deleted".
 	Events []string `json:"events,omitzero"`
 
 	// Only deliveries that were accepted (`true`) or that were not (`false`).

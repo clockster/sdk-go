@@ -762,7 +762,7 @@ func WebhooksDeliveriesIncludeValues() []string {
 // "user.deleted", "user.restored", "user.purged", "location.created", "location.updated",
 // "location.deleted", "department.created", "department.updated", "department.deleted",
 // "position.created", "position.updated", "position.deleted", "task.created", "task.completed",
-// "task.approved", "task.rejected", "task.deleted".
+// "task.approved", "task.rejected", "task.reopened", "task.deleted".
 const (
 	WebhooksEventUserCreated       = "user.created"
 	WebhooksEventUserUpdated       = "user.updated"
@@ -782,6 +782,7 @@ const (
 	WebhooksEventTaskCompleted     = "task.completed"
 	WebhooksEventTaskApproved      = "task.approved"
 	WebhooksEventTaskRejected      = "task.rejected"
+	WebhooksEventTaskReopened      = "task.reopened"
 	WebhooksEventTaskDeleted       = "task.deleted"
 )
 
@@ -806,6 +807,7 @@ func WebhooksEventValues() []string {
 		WebhooksEventTaskCompleted,
 		WebhooksEventTaskApproved,
 		WebhooksEventTaskRejected,
+		WebhooksEventTaskReopened,
 		WebhooksEventTaskDeleted,
 	}
 }
